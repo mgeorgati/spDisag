@@ -46,7 +46,7 @@ def plot_mapVectorPolygons(city, evalType, src, exportPath, title,LegendTitle, c
     mean = np.round(src['{}'.format(column)].mean(),2)
     valMax =  np.round(src['{}'.format(column)].max(),2)
     valMin = src['{}'.format(column)].min()
-    print(valMin, mean, valMax)
+    print(valMax,valMin, mean)
     fig, ax = plt.subplots(figsize=(20, 20),facecolor='white') #50, 50
     """cmap = mpl.cm.OrRd
     bounds = [0,75,95,105,125,valMax]
@@ -70,8 +70,6 @@ def plot_mapVectorPolygons(city, evalType, src, exportPath, title,LegendTitle, c
                     plt.annotate(text = row['Stadsdeel'], xy=row['coords'], horizontalalignment= 'center', fontsize=12) 
                 elif 'gm_naam' in srcfile.columns:
                     plt.annotate(text = row['gm_naam'], xy=row['coords'], horizontalalignment= 'center', fontsize=12)
-                elif 'KOMNAME' in srcfile.columns:
-                    plt.annotate(text = row['KOMNAME'], xy=row['coords'], horizontalalignment= 'center', fontsize=12)
                 else:
                     print("There is no column for labels")
     if invertArea:
@@ -128,6 +126,20 @@ def defineBinsVector(evalType, src, column, valMin, valMax, mean): #
         "#ffffbf": "{0}-{1}".format(int(a[3]),int(a[4])),
         "#c7e9ad": "{0}-{1}".format(int(a[4]),int(a[5])), "#80bfac": "{0}-{1}".format(int(a[5]),int(a[6])), 
         "#2b83ba": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
+    elif evalType == "div007":
+        bins = 7
+        if valMin <= -100 and valMax >= 100:
+            a=[valMin, -80, -60, -20, 20, 60, 80, valMax]
+        else:
+            a=[-100, -80, -60, -20, 20, 60, 80, 100] #75, 95, 105, 200,
+        cmap = ListedColormap(["#d7191c","#f17c4a","#fec980", "#ffffbf", "#c7e9ad", "#80bfac","#2b83ba"])
+        norm = colors.BoundaryNorm(a, bins)  
+        # Add a legend for labels
+        legend_labels = { "#d7191c": "<{0}".format(int(a[1])), "#f17c4a": "{0}-{1}".format(int(a[1]), int(a[2])), "#fec980": "{0}-{1}".format(int(a[2]),int(a[3])), 
+        "#ffffbf": "{0}-{1}".format(int(a[3]),int(a[4])),
+        "#c7e9ad": "{0}-{1}".format(int(a[4]),int(a[5])), "#80bfac": "{0}-{1}".format(int(a[5]),int(a[6])), 
+        "#2b83ba": ">{0}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
+
     elif evalType == "mae":
         bins = 7
         if -30<=valMax<=30 and -30<=valMin<=30:
@@ -188,15 +200,10 @@ def defineBinsVector(evalType, src, column, valMin, valMax, mean): #
         "#980043": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
     elif evalType == "popdistributionPolyg":
         bins = 7
-        if valMax <= 100000:
-            print('edo2')
-            a=[valMin, 1, 5500, 11000, 22500, 45000, 67500, 100000]
-        elif 100000 < valMax <= 300000:
-            print('edo3')
-            a=[valMin, 20000, 40000, 60000, 80000, 100000, 200000, 300000]
+        if valMax<=7500:
+            a=[valMin, 1, 500, 1500, 3000, 4500, 6000, 7500]
         else:
-            print('edo1')
-            a=[valMin, 20000, 40000, 60000, 80000, 100000, 300000, valMax]
+            a=[valMin,1, 500, 1500, 3000, 4500, 6000, valMax]
         cmap = ListedColormap(["#f1eef600","#e0c8e2","#da9acb", "#df65b0", "#de348a", "#c61266","#980043"])
         norm = colors.BoundaryNorm(a, bins)  
         # Add a legend for labels
@@ -236,16 +243,28 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
     elif evalType == "div007":
         bins = 7
         if valMin <= -100 and valMax >= 100:
-            a=[valMin, -80, -60, -20, 20, 60, 80, valMax]
+            a=[-99, -80, -60, -20, 20, 60, 80, 99]
         else:
             a=[-100, -80, -60, -20, 20, 60, 80, 100] #75, 95, 105, 200,
-        cmap = ListedColormap(["#d7191c","#f17c4a","#fec980", "#ffffbf", "#c7e9ad", "#80bfac","#2b83ba"])
+        cmap = ListedColormap(["#d7191c00","#d7191c","#f17c4a","#fec980", "#ffffbf", "#c7e9ad", "#80bfac","#2b83ba"])
         norm = colors.BoundaryNorm(a, bins)  
         # Add a legend for labels
         legend_labels = { "#d7191c": "<{0}".format(int(a[1])), "#f17c4a": "{0}-{1}".format(int(a[1]), int(a[2])), "#fec980": "{0}-{1}".format(int(a[2]),int(a[3])), 
         "#ffffbf": "{0}-{1}".format(int(a[3]),int(a[4])),
         "#c7e9ad": "{0}-{1}".format(int(a[4]),int(a[5])), "#80bfac": "{0}-{1}".format(int(a[5]),int(a[6])), 
-        "#2b83ba": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
+        "#2b83ba": ">{0}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
+    elif evalType == "pe":
+        bins = 7
+        
+        a=[0, 1, 20, 40, 60, 80, 100]
+        
+        cmap = ListedColormap(["#d7191c00","#fff5f0", "#fdccb8", "#fc8f6f", "#f44d37","#c5161b","#67000d"])
+        norm = colors.BoundaryNorm(a, bins)  
+        # Add a legend for labels
+        legend_labels = { "#fff5f000": "{0}-{1}".format(int(a[0]), int(a[1])), "#fff5f0": "{0}-{1}".format(int(a[1]), int(a[2])), 
+                         "#fdccb8": "{0}-{1}".format(int(a[2]), int(a[3])), "#fc8f6f": "{0}-{1}".format(int(a[3]),int(a[4])), 
+        "#f44d37": "{0}-{1}".format(int(a[4]),int(a[5])), "#c5161b": "{0}-{1}".format(int(a[5]),int(a[6])),
+        "#67000d":  ">{0}".format(int(a[6]))}
     elif evalType == "mae":
         bins = 7
         if valMin <= valMax <= 30:
@@ -276,8 +295,8 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
         "#2b83ba": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
     elif evalType == "popdistribution":
         bins = 7
-        if valMax < 200:
-            a=[valMin,1, 25, 50, 75, 100, 150, 200]
+        if valMax < 700:
+            a=[valMin,1, 25, 50, 75, 100, 150,valMax]
         elif 200<= valMax <= 500:
             a=[0, 1, 50, 100, 200, 300, 400, 500]
         else:
@@ -289,11 +308,29 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
         legend_labels = { "#e0c8e2": "{0}-{1}".format(int(a[1]), int(a[2])), "#da9acb": "{0}-{1}".format(int(a[2]),int(a[3])), 
         "#df65b0": "{0}-{1}".format(int(a[3]),int(a[4])),
         "#de348a": "{0}-{1}".format(int(a[4]),int(a[5])), "#c61266": "{0}-{1}".format(int(a[5]),int(a[6])), 
-        "#980043": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
+        "#980043": "{0}-{1}".format(int(a[6]),valMax)}
+    
+    elif evalType == "popdistributionPred":
+        print('pre')
+        bins = 7
+        if valMax < 200:
+            a=[valMin,1, 25, 50, 75, 100, 150, 200]
+        elif 700 <= valMax :
+            a=[0, 1, 50, 100, 200, 300, 400, 500]
+        else:
+            a=[valMin,1, 50, 100, 200, 300, 400, valMax]
+            #a=[valMin,1, 25, 50, 75, 100, 150, valMax]
+        cmap = ListedColormap(["#f1eef600","#ffffb2","#ffd76d", "#fea649", "#f86c30", "#e62f21","#bd0026"])
+        norm = colors.BoundaryNorm(a, bins)  
+        # Add a legend for labels
+        legend_labels = { "#ffffb2": "{0}-{1}".format(int(a[1]), int(a[2])), "#ffd76d": "{0}-{1}".format(int(a[2]),int(a[3])), 
+        "#fea649": "{0}-{1}".format(int(a[3]),int(a[4])),
+        "#f86c30": "{0}-{1}".format(int(a[4]),int(a[5])), "#e62f21": "{0}-{1}".format(int(a[5]),int(a[6])), 
+        "#bd0026": "{0}-{1}".format(int(a[6]), valMax)}
     elif evalType == "popdistributionPolyg":
         bins = 7
-        if valMin <= valMax <= 100000:
-            a=[valMin, 1, 5500, 11000, 22500, 45000, 67500, 90000]
+        if valMin <= valMax <= 7500:
+            a=[valMin, 1, 500, 1500, 3000, 4500, 6000, 7500]
         else:
             a=[valMin,1, 500, 1500, 3000, 4500, 6000, valMax]
         cmap = ListedColormap(["#f1eef600","#e0c8e2","#da9acb", "#df65b0", "#de348a", "#c61266","#980043"])
@@ -317,4 +354,6 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
         "#2b83ba": "{0}-{1}".format(round(a[6],2),valMax), "#2b83ba00": "mean total:{}".format(mean)}
         
     return cmap, norm, legend_labels
+
+
 

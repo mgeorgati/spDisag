@@ -30,7 +30,6 @@ def plot_map(city, evalType, src, exportPath, title,LegendTitle, districtPath, n
     #values = hist[1]
     #print(values)
     #b= np.round(values, decimals=2)
-    
     if districtPath:
         srcfile = gpd.read_file(districtPath)
         srcfile.plot(ax=ax, facecolor='none', edgecolor='#000000', linewidth=0.8,  zorder=17 ) #alpha=0.8,
@@ -42,8 +41,6 @@ def plot_map(city, evalType, src, exportPath, title,LegendTitle, districtPath, n
                     plt.annotate(text = row['Stadsdeel'], xy=row['coords'], horizontalalignment= 'center', fontsize=12) 
                 elif 'gm_naam' in srcfile.columns:
                     plt.annotate(text = row['gm_naam'], xy=row['coords'], horizontalalignment= 'center', fontsize=12)
-                elif 'KOMNAME' in srcfile.columns:
-                    plt.annotate(text = row['KOMNAME'], xy=row['coords'], horizontalalignment= 'center', fontsize=12)
                 else:
                     print("There is no column for labels")
         xlim = ([srcfile.total_bounds[0],  srcfile.total_bounds[2]])
@@ -84,5 +81,3 @@ def plot_map(city, evalType, src, exportPath, title,LegendTitle, districtPath, n
     
     plt.cla()
     plt.close()
-
-

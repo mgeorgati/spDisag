@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import numpy as np
+
 def compareCounts(fileList, column):
     df = pd.DataFrame()
     for i in fileList:
@@ -90,5 +91,3 @@ def BoxPlotNoOutliers(directory, fileList, column):
     plt.savefig(directory, dpi=300, bbox_inches='tight',) 
     plt.cla()
     plt.close()   
-
-

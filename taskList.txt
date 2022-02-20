@@ -1,2 +1,2 @@
-- [ ] for an empty checkbox
+- [ ] Needs cleaning: https://github.com/mgeorgati/DasymetricMapping/tree/master/SDis_Self-Training/dataPrepNL 
 - [x] for a checked checkbox
