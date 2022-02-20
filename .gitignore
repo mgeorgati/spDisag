@@ -6,5 +6,7 @@ SDis_Self-Training/Statistics/
 SDis_Self-Training/Temp/
 SDis_Self-Training/TempCSV/
 SDis_Self-Training/TempRaster/
+SDis_Self-Training/dataPrepDK/rawMunicipality_DST
+catboost_info/
 
 

@@ -16,14 +16,8 @@ dependencies:
   - seaborn = 0.11.2
   - shapely = 1.7
   - rasterio = 1.2.10
-  #- rasterstats = 0.16.0
+
   - contextily = 1.0
-  #- sqlalchemy = 1.4.22
-  #- psycopg2 = 2.8.6
-  #- geoalchemy2 = 0.6.3
-  #- imageio = 2.9.0
-  #- tobler = 0.8.2
-  #- osmnx = 1.1.1
   - astropy=4.3.1
   #- xgboost = 1.5.0
   - catboost = 1.0.3
@@ -31,9 +25,5 @@ dependencies:
   - numba = 0.55.1
 
 
-#conda env update --name spdisag_env --file C:/FUME/DasymetricMapping/dasymetric.yml --prune
+#conda env update --name spdisag_env --file /dasymetric.yml --prune
 #conda env create -f dasymetric.yml
-
-#conda create --prefix K:\FUME\envs --name spdisag_env --file K:/FUME/DasymetricMapping/dasymetric.yml
-
-#conda env create --prefix K:/FUME/envs/spdisag_env --file K:/FUME/DasymetricMapping/dasymetric.yml
