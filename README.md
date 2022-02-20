@@ -7,4 +7,7 @@ You need to have the following:
 2. An AncillaryData folder with the desired ancillary data for each case study. GHS, CORINE LAND COVER, ESM etc are examples of ancillary data. 
 You need to define them in runDisaggregation.py (raster format).
 3. A SDis_Self-Training/Shapefiles/ with the vector layer of the administrative units (shp).
-4. A SDis_Self-Training/Statistics/ folder with the aggregated counts respectively (csv). 
+4. A SDis_Self-Training/Statistics/ folder with the aggregated counts respectively (csv).
+
+The main architecture was designed by João Monteiro.
+Further information can be found in 'Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosted Regression Trees'
