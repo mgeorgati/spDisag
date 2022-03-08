@@ -11,3 +11,6 @@ You need to define them in runDisaggregation.py (raster format).
 
 The main architecture was designed by João Monteiro.
 Further information can be found in 'Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosted Regression Trees'
+
+Acknowledgements
+This work has been supported by the European Union’s Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu)
