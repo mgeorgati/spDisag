@@ -1,4 +1,6 @@
-def eval_Results_GC(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
+import os, rasterio
+from osgeo import gdal
+def eval_Results_cph(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
     evalPath = ROOT_DIR + "/Evaluation/{}/".format(city)
 
     # Required files

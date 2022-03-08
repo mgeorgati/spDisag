@@ -2,25 +2,24 @@ import os
 import warnings
 import subprocess
 warnings.filterwarnings("ignore", category=FutureWarning)
-from config.definitions import ROOT_DIR, ancillary_path
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import itertools
-import random
+from mainFunctions.basic import createFolder
 from pathlib import Path
 import numpy as np
 import dissever
 import disseverM 
 import osgeoutils as osgu
-from config.definitions import city, year
+
 
 SEED = 42
 os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, inputDataset, iterMax, python_scripts_folder_path):
+def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, inputDataset, iterMax, python_scripts_folder_path):
     """[summary]
 
     Args:
@@ -164,7 +163,7 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
         
     ancdatasetsopts = [ancdatasets]
 
-    fshape = osgu.copyShape(fshapea, 'dissever')
+    fshape = osgu.copyShape(fshapea, 'dissever', city)
     # if not yraster: osgu.addAttr2Shapefile(fshape, fcsv, [admboundary1.upper(), admboundary2.upper()])
     if not ymethodopts: osgu.addAttr2Shapefile(fshape, fcsv, '{0}_{1}'.format(year,city))
 
@@ -173,15 +172,16 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
                                                                                 methodopts,
                                                                                 perc2evaluateopts,
                                                                                 ymethodopts):
+        createFolder(ROOT_DIR + "/Results/{0}/{1}/".format(city, method))
                                                                                 
         if isinstance(attr_value, list):
             listOfFiles = []
             converted_list = [str(element) for element in attr_value]
             joined_string = '_'.join(converted_list)
-            outfile =  ROOT_DIR + '/TempRaster/{0}/disseverWIN_'.format(city) + str(len(attr_value)) + '_{0}.tif'.format(ymethod.lower())
+            outfile =  ROOT_DIR + '/TempRaster/{0}/merged_'.format(city) + str(len(attr_value)) + '_{0}.tif'.format(ymethod.lower())
             if not os.path.exists(outfile):
                 for i in attr_value:
-                    filePaths = ROOT_DIR + '/Results/{1}/{4}/{0}_{1}_{2}_{3}WIN.tif'.format(year,city,i,ymethod.lower(),ymethod)
+                    filePaths = ROOT_DIR + '/Results/{1}/{4}/{0}_{1}_{2}_{3}.tif'.format(year,city,i,ymethod.lower(),ymethod)
                     listOfFiles.append(filePaths) 
                 
                 #Create txt file with number of band --> Name of File
@@ -190,7 +190,7 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
                 for i,each in enumerate(listOfFiles,start=1):
                     f.write("{}.{}".format(i,each))
                 f.close()
-                    
+                print(outfile) 
                 #Write the merged tif file 
                 cmd_tif_merge = """python {0}/gdal_merge.py -o "{1}" -separate {2} """.format(python_scripts_folder_path, outfile, str_files)
                 print(cmd_tif_merge)
@@ -218,14 +218,14 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
                     val = attr_value[i]
                     print(dissdataset.shape, np.nanmax(dissdataset))
                     print('- Writing raster to disk...')
-                    osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01WIN_500_' + casestudy + '_' + val + '.tif')#
+                    osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_' + casestudy + '_' + val + '.tif')#
         #__________________________
         # if input is not a list
         else: 
             if ymethod == 'Pycno':
                 yraster = ROOT_DIR + '/Results/{2}/{0}/{1}_{2}_{3}_pycno.tif'.format(ymethod, year, city, attr_value)
             elif ymethod == 'Dasy':
-                yraster = ROOT_DIR + '/Results/{2}/{0}/{1}_{2}_{3}_dasyWIN.tif'.format(ymethod, year, city, attr_value)    
+                yraster = ROOT_DIR + '/Results/{2}/{0}/{1}_{2}_{3}_dasy.tif'.format(ymethod, year, city, attr_value)    
             else:
                 yraster = None
                 print('none')
@@ -242,7 +242,7 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
                                                             yraster=yraster, casestudy=casestudy,
                                                             verbose=True) #yraster, 29, 30
                 print('- Writing raster to disk...')
-                osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever00WIN_' + casestudy + '_' + attr_value + '.tif')#
+                osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever00_' + casestudy + '_' + attr_value + '.tif')#
             else:
                 print("This is for the CNN") #UNCOMMENT IT FOR CNN
                 """
@@ -317,6 +317,6 @@ def run_disaggregation (methodopts, ymethodopts, cnnmodelopts, city, year, attr_
                     osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + "/Results/" + method + 'dissever_' + casestudy + '.tif')
                     """
 
-    osgu.removeShape(fshape)
+    osgu.removeShape(fshape, city)
 
     

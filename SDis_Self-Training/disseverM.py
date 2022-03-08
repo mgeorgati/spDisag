@@ -10,7 +10,7 @@ import metricsev as mev
 import neigPairs
 import nputils as npu
 import osgeoutils as osgu
-#import kerasutils as ku
+import kerasutils as ku
 import pycno
 import matplotlib.pyplot as plt
 
@@ -22,7 +22,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
 
     print('| DISSEVER MULTIPLE VARIABLES')
     indicator = casestudy.split('_')[0]
-    filenamemetrics2e = ROOT_DIR + '/TempCSV/pcounts1_' + casestudy + '_2e0.csv'
+    filenamemetrics2e = ROOT_DIR + '/TempCSV/{}/pcounts1_'.format(city) + casestudy + '_2e0.csv'
 
     if patchsize >= 16 and (cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg'):
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_wpadd_extended'
@@ -33,7 +33,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
 
     nrowsds = ancdatasets[:,:,0].shape[1]
     ncolsds = ancdatasets[:,:,0].shape[0]
-    idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds])[0] # ID's polígonos originais
+    idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds],city=city)[0] # ID's polígonos originais
 
     print('| Computing polygons areas')
     polygonareas = gput.computeAreas(fshape)
@@ -64,7 +64,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             disseverdatasetA, rastergeo = osgu.readRaster(yraster)   
             idpolvalues = npu.statsByID(disseverdatasetA, idsdataset, 'sum')
     else:
-        polygonvaluesdataset, rastergeo = osgu.ogr2raster(fshape, attr=attr_value, template=[rastergeo, nrowsds, ncolsds])
+        polygonvaluesdataset, rastergeo = osgu.ogr2raster(fshape, attr=attr_value, template=[rastergeo, nrowsds, ncolsds], city=city)
         idpolvalues = npu.polygonValuesByID(polygonvaluesdataset, idsdataset)
         disseverdataset, rastergeo = pycno.runPycno(idsdataset, polygonvaluesdataset, rastergeo, tempfileid)
 
@@ -90,7 +90,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
      
     if method.endswith('cnn'):
         print("This is for the CNN") #UNCOMMENT IT FOR CNN
-        """
+        
         # Create anc variables patches (includes replacing nans by 0, and 0 by nans)
         print('| Creating ancillary variables patches')
         # ancdatasets[np.isnan(ancdatasets)] = 0
@@ -101,8 +101,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         # Compile model and save initial weights
         cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
-        cnnobj.save_weights('Temp/models_' + casestudy + '.h5')
-        """
+        cnnobj.save_weights('Temp/{}/models_'.format(city) + casestudy + '.h5')
+        
 
     lasterror = -np.inf
     lowesterror = np.inf
@@ -115,7 +115,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
            
         if method.endswith('cnn'):
             print("This is for the CNN") #UNCOMMENT IT FOR CNN
-            """
+            
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0
             disseverdataset = disseverdataset * dissmask
@@ -145,7 +145,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             # predictedmapslm = caret.predict(mod, ancdatasets)
             # for i in range(len(predictedmapslm)): predictedmapslm[i] = np.expand_dims(predictedmapslm[i], axis=2)
             # for i in range(len(predictedmaps)): predictedmaps[i] = 0.9 * predictedmaps[i] + 0.1 * predictedmapslm[i]
-            """
+            
         else:
             print('| -- Fitting the model')
             # Replace NaN's by 0
@@ -183,7 +183,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             previdpolvalues = idpolvalues # Original polygon values
             
             #adjpairs--> list of lists with adjustent 
-            idsdataset2e = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds])[0]
+            idsdataset2e = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds],city=city)[0]
             
             # Edit idpolvalues
             pairslist = [item for t in adjpairs for item in t]
@@ -259,7 +259,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             #predmap = predmap.reshape(predmap.shape[0], predmap.shape[1], predmap.shape[3]) 
             predmap1 = predmap[:,:,0]
            
-            osgu.writeRaster(predmap1, rastergeo, ROOT_DIR + "/TempRaster/" +'pcounts1_{}_'.format(val) + casestudy + '_' + str(k).zfill(2) + 'it.tif')
+            osgu.writeRaster(predmap1, rastergeo, ROOT_DIR + "/TempRaster/{}/".format(city) +'pcounts1_{}_'.format(val) + casestudy + '_' + str(k).zfill(2) + 'it.tif')
 
             newPredList.append(predmap1)
             print("---- This is where the loop ends ----")
@@ -288,32 +288,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
                 print('Retaining model fitted at iteration', lowesterriter)
                 break
         olddisseverdataset = disseverdatasetA
-        """
-        # Check if the algorithm converged
-        newdissever = np.dstack((newPredList))
-        error = np.nanmean(abs(newdissever - olddisseverdataset))
-        
-        with open(filenamemetrics2e, 'a') as myfile: myfile.write(';' + str(error) + '\n')
-        errorrat = (error/lasterror) if lasterror>0 else np.inf
-        lasterror = error
-        print('Error:', error)
-        print('Errorrat:', errorrat, min_iter)
-        
-        if k >= min_iter:
-            if errorrat < converge:
-                if error < lowesterror:
-                    lowesterror = error
-                    lowesterriter = k
-                    print('NOT Retaining model fitted at iteration', lowesterriter)
-                    lowesterrdisseverdataset = np.copy(newdissever)
-            else:
-                if k == min_iter:
-                    lowesterriter = k
-                else:
-                    newdissever = lowesterrdisseverdataset #itan disseverdatasetA
-                print('Retaining model fitted at iteration', lowesterriter)
-                break
-        olddisseverdataset = newdissever"""
     
     elapsed_timeT = time.time() - start_timeT
     with open(filenamemetrics2e, 'a') as myfile: myfile.write(';' + str(elapsed_timeT) + '\n')

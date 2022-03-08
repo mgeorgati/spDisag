@@ -1,11 +1,9 @@
 import numpy as np
 from scipy import ndimage
 import massp, osgeoutils as osgu, nputils as npu
-import collections
-from config.definitions import ROOT_DIR
 
 #converge=0.001 <<< Change 
-def runPycno(city, idsdataset, polygonvaluesdataset, rastergeo, attr_value, niter=100, converge=0.001, tempfileid=None):
+def runPycno(ROOT_DIR, city, idsdataset, polygonvaluesdataset, rastergeo, attr_value, niter=100, converge=0.001, tempfileid=None):
     print('| PYCNOPHYLACTIC INTERPOLATION')
     pycnodataset = massp.runMassPreserving(idsdataset, polygonvaluesdataset, rastergeo, tempfileid)[0]
     oldpycnodataset = pycnodataset

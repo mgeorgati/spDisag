@@ -1,5 +1,6 @@
 # Folder ignores
 AncillaryData/
+GroundTruth/
 SDis_Self-Training/Evaluation/
 SDis_Self-Training/Shapefiles/
 SDis_Self-Training/Statistics/

@@ -1,5 +1,5 @@
 import osgeoutils as osgu, nputils as npu, gputils as gput
-#import kerasutils as ku
+import kerasutils as ku
 import pycno, caret, neigPairs
 import numpy as np
 from sklearn import metrics
@@ -16,17 +16,17 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     
     indicator = casestudy.split('_')[0]
     filenamemetrics2e = ROOT_DIR + '/TempCSV/pcounts_' + casestudy + '_2e.csv'
-    """
+    
     if patchsize >= 16 and (cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg'):
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_wpadd_extended'
     elif patchsize >= 16:
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_nopadd_extended'
     else:
         cstudyad = None
-    """
+    
     nrowsds = ancdatasets[:,:,0].shape[1]
     ncolsds = ancdatasets[:,:,0].shape[0]
-    idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds])[0] # ID's polígonos originais
+    idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds],city=city)[0] # ID's polígonos originais
 
     print('| Computing polygons areas')
     polygonareas = gput.computeAreas(fshape)
@@ -35,7 +35,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         disseverdataset, rastergeo = osgu.readRaster(yraster)
         idpolvalues = npu.statsByID(disseverdataset, idsdataset, 'sum')
     else:
-        polygonvaluesdataset, rastergeo = osgu.ogr2raster(fshape, attr='VALUE', template=[rastergeo, nrowsds, ncolsds])
+        polygonvaluesdataset, rastergeo = osgu.ogr2raster(fshape, attr='VALUE', template=[rastergeo, nrowsds, ncolsds], city=city)
         idpolvalues = npu.polygonValuesByID(polygonvaluesdataset, idsdataset)
         disseverdataset, rastergeo = pycno.runPycno(idsdataset, polygonvaluesdataset, rastergeo, tempfileid)
 
@@ -53,7 +53,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     ancvarsmask = np.dstack([dissmask] * ancdatasets.shape[2])
 
     olddisseverdataset = disseverdataset
-    """[summary]
+    
 
     if method.endswith('cnn'):
         # Create anc variables patches (includes replacing nans by 0, and 0 by nans)
@@ -67,9 +67,9 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         cnnobj.save_weights('Temp/models_' + casestudy + '.h5')
-    """
+    
     #strat = True
-    """
+    
     if method.startswith('ap'):
         if iterdissolv:
             if strat:
@@ -82,7 +82,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
                 print("2",len(adjpairs))
             initadjpairs = adjpairs
             if(verbose): print('Fixed adjacent pairs (' + str(len(initadjpairs)) + ') -', initadjpairs)
-    """
+    
     lasterror = -np.inf
     lowesterror = np.inf
     for k in range(1, max_iter+1):
@@ -93,7 +93,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
 
         previdpolvalues = idpolvalues # Original polygon values
         if method.startswith('ap'):
-            """
+            
             if iterdissolv:
                 if strat:
                     pquartilles = gput.polygonsQuartilles(idpolvalues, numpols)
@@ -106,8 +106,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
                 newshape, newpairs = gput.dissolvePairs(fshape, adjpairs)
 
                 # osgu.removeShapefile(newshape)
-            """
-            idsdataset2e = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds])[0]
+            
+            idsdataset2e = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds], city=city)[0]
 
             # Edit idpolvalues
             pairslist = [item for t in adjpairs for item in t]
@@ -121,7 +121,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         
         if method.endswith('cnn'):
             print('| -- Updating dissever patches')
-            """
+            
             # disseverdataset[np.isnan(disseverdataset)] = 0
             disseverdataset = disseverdataset * dissmask
             disspatches = ku.createpatches(disseverdataset, patchsize, padding=padd, stride=1)
@@ -134,14 +134,14 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
                                              ancpatches, disseverdataset.shape, batchsize=batchsize)
 
-            """
+            
         else:
             print('| -- Fitting the model')
             # Replace NaN's by 0
             ancdatasets[np.isnan(ancdatasets)] = 0
             disseverdataset = disseverdataset * dissmask
 
-            mod = caret.fit(ancdatasets, disseverdataset, p, method, batchsize, lrate, epochspi,casestudy,city)
+            mod = caret.fit(ancdatasets, disseverdataset, p, method, batchsize, lrate, epochspi, ROOT_DIR, casestudy,city)
 
             print('| -- Predicting new values')
             predictedmaps = caret.predict(mod, ancdatasets)
@@ -186,10 +186,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
                     print("www",polid, predmap[idsdataset == polid])
             for polid in polygonratios2e:
                 predmap2e[idsdataset2e == polid] = (predmap2e[idsdataset2e == polid] * polygonratios2e[polid])
-                if polid == 474.0:
-                    print("www",polid, predmap[idsdataset == polid])
-            print("12", predmap.shape)
-            print("13", predmap2e.shape)
+                
+            
             if method.startswith('ap'):
                 # Compute metrics for the evaluation municipalities
                 actual2e = list(idpolvalues2e.values())

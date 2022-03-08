@@ -1,6 +1,5 @@
 import warnings
 
-from config.definitions import ROOT_DIR
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from sklearn.linear_model import LinearRegression
@@ -20,30 +19,27 @@ import matplotlib.pyplot as plt
 #matplotlib.use('TKAgg')
 import seaborn as sns
 from mainFunctions.basic import createFolder
-"""
-import kerasutils as ku
-import xgboost as xgb
-import skimage.measure
+from numpy import random
+
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras import utils
 import tensorflow as tf
-"""
 SEED = 42
 
 def fitlm(X, y):
     mod = LinearRegression()
     mod = mod.fit(X, y)
     return mod
-"""
+
 def fitsgdregressor(X, y, batchsize, lrate, epoch):
     mod = SGDRegressor(max_iter=epoch, alpha=0, learning_rate='constant', eta0=lrate, verbose=1)
     mod = mod.fit(X, y)
     return mod
-"""
 
-def plot_feature_importance(importance,names,model_type, casestudy,city):
-    
+
+def plot_feature_importance(ROOT_DIR, importance,names, model_type, casestudy, city):
+    #-------- Plot an image for the importance of variables --------
     #Create arrays from feature importance and feature names
     feature_importance = np.array(importance)
     feature_names = np.array(names)
@@ -63,68 +59,36 @@ def plot_feature_importance(importance,names,model_type, casestudy,city):
     plt.title(model_type + '_FEATURE IMPORTANCE')
     plt.xlabel('FEATURE IMPORTANCE')
     plt.ylabel('FEATURE NAMES')
-    createFolder(ROOT_DIR + "/Results/{2}/{0}_importance".format(model_type,casestudy,city))
+    createFolder(ROOT_DIR + "/Results/{1}/{0}_importance".format(model_type,city))
     plt.savefig(ROOT_DIR + "/Results/{2}/{0}_importance/{1}.png".format(model_type,casestudy,city), dpi=300, bbox_inches='tight')
     
-def fitrf(X, y, ROOT_DIR, casestudy,city):
+def fitrf(X, y, casestudy, city, ROOT_DIR):
     # mod = RandomForestRegressor(n_estimators = 10, random_state=SEED) # n_estimators = 10
     mod = RandomForestRegressor(n_estimators = 100, random_state=SEED, criterion='squared_error') # absolute_error, 'squared_error'
     mod = mod.fit(X, y)
     feature_names = [f"feature {i}" for i in range(X.shape[1])]
     importances = mod.feature_importances_
-    plot_feature_importance(importances, feature_names, 'aprf', casestudy,city)  
+    plot_feature_importance(ROOT_DIR, importances, feature_names, 'aprf', casestudy, city)  
     
     return mod
 
 def fitmulti(X, y):
-
+    #-------- NOT WORKING --------
     wrapper = MultiOutputRegressor(RandomForestRegressor(n_estimators=100, random_state=SEED, criterion='squared_error'))# mod = RandomForestRegressor(n_estimators = 10, random_state=SEED) # n_estimators = 10
     mod = wrapper.fit(X, y)
-    
     return mod
 
-class MultiRMSEObjectiveI(MultiRegressionCustomObjective):
-                
-        def calc_ders_multi(self, approxes, targets, weight):           
-                assert len(approxes) == len(targets)
-                sum = np.sum(approxes[0:-1])
-                error1 = 2 * (sum - approxes[-1])
-                error2 = 2 * (approxes[-1] - sum)
-                grad = []
-                hess = [[0 for j in range(len(targets))] for i in range(len(targets))]
-                for index in range(len(targets)):
-                        if index==len(targets) -1 : der1 = ( 2*(targets[index] - approxes[index]) - error2 ) * weight
-                        else: der1 = ( 2*(targets[index] - approxes[index]) + error1 ) * weight
-                        der2 = -weight
-                        grad.append(der1)
-                        hess[index][index] = der2
-                return (grad, hess)
-
-class MultiRMSEObjectiveS(MultiRegressionCustomObjective):
-                
-        def calc_ders_multi(self, approxes, targets, weight):           
-                assert len(approxes) == len(targets)
-                sum1 = np.sum(approxes)
-                sum2 = np.sum(targets)
-                grad = []
-                hess = [[0 for j in range(len(targets))] for i in range(len(targets))]
-                for index in range(len(targets)):
-                        der1 = ((targets[index] - approxes[index]) + (sum2-sum1)) * weight
-                        der2 = -weight
-                        grad.append(der1)
-                        hess[index][index] = der2
-                return (grad, hess)
-
+#-------- LOSS FUNCTION FOR AMSTERDAM --------
 class MultiRMSEObjectiveA(MultiRegressionCustomObjective):
-                
+           
         def calc_ders_multi(self, approxes, targets, weight):  
                 # Assume that there are 5 output quantities. 
                 # The first three should be summed to get the total, and the last two form another group that should be summed to get the total.                           
                 assert len(approxes) == len(targets)
                 sum1g1 = np.sum(approxes[0:5])
                 sum2g1 = np.sum(targets[0:5])
-                sum1g2 = np.sum(approxes[5:-1])
-                sum2g2 = np.sum(targets[5:-1])
+                sum1g2 = np.sum(approxes[-7:])
+                sum2g2 = np.sum(targets[-7:])
                 grad_g1 = np.sign(sum2g1-sum1g1)
                 grad_g2 = np.sign(sum2g2-sum1g2)
                 grad = []
@@ -136,6 +100,7 @@ class MultiRMSEObjectiveA(MultiRegressionCustomObjective):
                         hess[index][index] = der2
                 return (grad, hess)
 
+#-------- LOSS FUNCTION FOR COPENHAGEN --------
 class MultiRMSEObjectiveB(MultiRegressionCustomObjective):
                 
         def calc_ders_multi(self, approxes, targets, weight):  
@@ -144,10 +109,10 @@ class MultiRMSEObjectiveB(MultiRegressionCustomObjective):
                 assert len(approxes) == len(targets)
                 sum1g1 = np.sum(approxes[0:5])
                 sum2g1 = np.sum(targets[0:5])
-                sum1g2 = np.sum(approxes[5:-3])
-                sum2g2 = np.sum(targets[5:-3])
-                sum1g3 = np.sum(approxes[-3:-1])
-                sum2g3 = np.sum(targets[-3:-1])
+                sum1g2 = np.sum(approxes[5:-2])
+                sum2g2 = np.sum(targets[5:-2])
+                sum1g3 = np.sum(approxes[-3:])
+                sum2g3 = np.sum(targets[-3:])
                 grad_g1 = np.sign(sum2g1-sum1g1)
                 grad_g2 = np.sign(sum2g2-sum1g2)
                 grad_g3 = np.sign(sum2g3-sum1g3)
@@ -160,12 +125,14 @@ class MultiRMSEObjectiveB(MultiRegressionCustomObjective):
                         hess[index][index] = der2
                 return (grad, hess)
                                 
-def fitcatbr(X, y, casestudy,city):
-    mod = CatBoostRegressor(iterations=500, learning_rate=0.01, depth=5, task_type='CPU', thread_count=-1, loss_function=MultiRMSEObjectiveB(), eval_metric='MultiRMSE') #iterations=200, learning_rate=0.1, depth=5
+def fitcatbr(X, y, casestudy,city, ROOT_DIR):
+    if city == "ams":
+        mod = CatBoostRegressor(iterations=5, learning_rate=0.1, depth=1, task_type='CPU', thread_count=-1, loss_function=MultiRMSEObjectiveA(), eval_metric='MultiRMSE') 
+    if city == "cph":
+        mod = CatBoostRegressor(iterations=5, learning_rate=0.1, depth=1, task_type='CPU', thread_count=-1, loss_function=MultiRMSEObjectiveB(), eval_metric='MultiRMSE') 
     mod = mod.fit(X, y)
     feature_names = [f"feature {i}" for i in range(X.shape[1])]
-    plot_feature_importance(mod.get_feature_importance(), feature_names, 'CATBOOST', casestudy, city)   
-    
+    plot_feature_importance(ROOT_DIR, mod.get_feature_importance(), feature_names, 'apcatbr', casestudy, city)   
     return mod
 
 def fitxgbtree(X, y):
@@ -182,19 +149,12 @@ def fitxgbtree(X, y):
     return mod
 
 def fitxgbtreeM(X, y):
-    # gbm = xgb.XGBRegressor(seed=SEED)
+    #-------- NOT WORKING --------
     gbm = xgb.XGBRegressor(seed=SEED, eval_metric='mae')
-    # g13 = {'colsample_bytree': [0.4, 0.5], 'n_estimators': [50, 75, 100], 'max_depth': [3, 5, 7]}
-    # # g14 = {'colsample_bytree': [0.3, 0.4, 0.5], 'n_estimators': [50, 75, 100], 'max_depth': [3, 5, 7]}
-    # mod = RandomizedSearchCV(param_distributions=g13, estimator=gbm,
-    #                         scoring='neg_mean_squared_error', n_iter=5, cv=4,
-    #                         verbose=1)
-    # mod = mod.fit(X, y)
-
     mod = gbm.fit(X, y)
     return mod
 
-def fit(X, y, p, method, batchsize, lrate, epoch, casestudy,city):
+def fit(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
     X = X.reshape((-1, X.shape[2]))
     y = np.ravel(y)
 
@@ -225,7 +185,7 @@ def fit(X, y, p, method, batchsize, lrate, epoch, casestudy,city):
         #return fitsgdregressor(X, y, batchsize, lrate, epoch)
     elif(method.endswith('rf')):
         print('|| Fit: Random Forests')
-        return fitrf(X, y, ROOT_DIR, casestudy,city)
+        return fitrf(X, y, casestudy, city, ROOT_DIR)
     elif(method.endswith('xgbtree')):
         print('|| Fit: XGBTree')
         #return fitxgbtree(X, y)
@@ -255,28 +215,28 @@ def fitM(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
         #return fitsgdregressor(X, y, batchsize, lrate, epoch)
     elif(method.endswith('rf')):
         print('|| Fit: Random Forests')
-        return fitrf(X, y, ROOT_DIR, casestudy,city)
+        return fitrf(X, y, casestudy, city, ROOT_DIR)
     elif(method.endswith('mltr')):
         print('|| Fit: Multi Output Regressor')
         return fitmulti(X, y)
     elif(method.endswith('catbr')):
         print('|| Fit: CatBoostRegressor')
-        return fitcatbr(X, y, casestudy,city)
+        return fitcatbr(X, y, casestudy, city, ROOT_DIR)
     elif(method.endswith('xgbtree')):
         print('|| Fit: XGBTree')
-        return fitxgbtreeM(X, y)
+        #return fitxgbtreeM(X, y)
     else:
         return None
 
-"""
+
 def get_callbacks():
     return [
         # ReduceLROnPlateau(monitor='loss', min_delta=0.0, patience=3, factor=0.1, min_lr=5e-6, verbose=1),
         # EarlyStopping(monitor='loss', min_delta=0.001, patience=3, verbose=1, restore_best_weights=True)
         EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
     ]
-"""
-"""
+
+
 class DataGenerator(utils.Sequence):
     'Generates data for Keras'
 
@@ -298,6 +258,7 @@ class DataGenerator(utils.Sequence):
         batch_X[np.isnan(batch_X)] = 0 ## Alterado
         batch_y = self.y[idsamplesbatch]
         return np.array(batch_X), np.array(batch_y)
+
 
 def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
     tf.random.set_seed(SEED)
@@ -444,7 +405,8 @@ def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
 
     else:
         print('Fit CNN - Unknown model')
-"""
+
+
 def predict(mod, X):
     newX = X.reshape((-1, X.shape[2]))
     pred = mod.predict(newX)
@@ -452,13 +414,6 @@ def predict(mod, X):
     pred = pred.reshape(X.shape[0], X.shape[1])
     return [pred]
 
-def predictM(mod, X, attr_value):
-    newX = X.reshape((-1, X.shape[2]))
-    pred = mod.predict(newX)
-    # pred = np.exp(pred)-1
-    pred = pred.reshape(X.shape[0], X.shape[1], len(attr_value)) #HER IT NEED TO PASS len(attr_value)
-    predlist = np.dsplit(pred, len(attr_value))
-    return predlist #[pred]
 
 def predictloop(cnnmod, patches, batchsize):
     # Custom batched prediction loop
@@ -493,11 +448,11 @@ def predictloop(cnnmod, patches, batchsize):
         patchespred[ctignore] = np.nan
 
         i = i+1
-        if(i%1000 == 0): print('»» Batch', i, '/', len(batch_indices), end='/r')
+        if(i%1000 == 0): print('»» Batch', i, '/', len(batch_indices), end='\r')
 
     return y_pred_probs
 
-"""
+
 def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize, stride=1):
     if mod == 'lenet':
         print('| --- Predicting new values, Le-Net')
@@ -549,5 +504,3 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
 
     else:
         print('Predict CNN - Unknown model')
-"""
-

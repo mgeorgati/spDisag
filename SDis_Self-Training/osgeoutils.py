@@ -84,7 +84,7 @@ def removeShapefile(fshape):
     driver = ogr.GetDriverByName("ESRI Shapefile")
     driver.DeleteDataSource(fshape)
 
-def ogr2raster(fshape, attr, template):
+def ogr2raster(fshape, attr, template, city):
     print('| Converting shapefile to raster:', fshape, '-', attr)
 
     if attr == 'ID':
@@ -98,7 +98,7 @@ def ogr2raster(fshape, attr, template):
     cols = template[1]
     rows = template[2]
 
-    tempfile = ROOT_DIR + '/TempRaster/' + 'tempfileo2r_' + attr + '_' + str(os.getpid()) + '.tif'
+    tempfile = ROOT_DIR + '/TempRaster/{}'.format(city) + 'tempfileo2r_' + attr + '_' + str(os.getpid()) + '.tif'
     target_ds = gdal.GetDriverByName('GTiff').Create(tempfile, cols, rows, 1, gdal.GDT_Float32)
 
     target_ds.SetGeoTransform(template[0])
@@ -122,18 +122,18 @@ def ogr2raster(fshape, attr, template):
 
     return dataset, rastergeo
 
-def copyShape(fshapea, meth):
+def copyShape(fshapea, meth,city):
     fshapea = Path(fshapea)
     fname = fshapea.stem
     #fname = fshapea.split('\\',-1)[-1].split('.shp')[0]
     print(fshapea,fname)
-    fshape = ROOT_DIR + '/Temp/' + fname + '_' + meth + '_' + str(os.getpid()) + '.shp'
+    fshape = ROOT_DIR + '/Temp/{}/'.format(city) + fname + '_' + meth + '_' + str(os.getpid()) + '.shp'
     gpd.read_file(fshapea).to_file(fshape, driver='ESRI Shapefile')
     return fshape
 
-def removeShape(fshape):
-    for file in os.listdir(ROOT_DIR + '/Temp'):
+def removeShape(fshape,city):
+    for file in os.listdir(ROOT_DIR + '/Temp/{}'.format(city)):
         fname = fshape.split('\\',-1)[-1].split('.shp')[0]
         if file.startswith(fname):
-            os.remove(ROOT_DIR + 'Temp/' + file)
+            os.remove(ROOT_DIR + 'Temp/{}'.format(city) + file)
 
