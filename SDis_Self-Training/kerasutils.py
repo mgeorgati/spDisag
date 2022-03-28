@@ -1,4 +1,5 @@
 import numpy as np, random
+from sklearn import metrics
 from sklearn.feature_extraction.image import extract_patches_2d
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
@@ -17,6 +18,38 @@ SEED = 42
 def custom_activation(x):
     return K.elu(x)
 
+####### THIS IS THE NEW CUSTOM LOSS FUNCTION FOR CNN
+def averageinst(y_pred, i):
+    y_pred[0] = tf.math.add(y_pred[0][:,:,:,i], y_pred[1][:,:,:,i])
+    y_pred[0] = tf.math.divide(y_pred[0], tf.cast(2, tf.float32))
+    return y_pred
+
+def averagepreds(y_pred):
+    i = tf.constant(0)
+    y_pred = tf.while_loop(tf.less(i, len(y_pred[0][-1])), averageinst(y_pred, i)) # Does this work?
+    return y_pred[0]
+
+def custom_loss_fn(nsubgroups = [3, 2], nmodelpred = 2):
+    def cl1(y_true, y_pred):
+        numfinite = tf.math.count_nonzero(tf.math.is_finite(y_true[:,:,:,0]))
+        mask = tf.where(tf.math.is_nan(y_true), K.constant(0), K.constant(1))
+        y_true = tf.math.multiply_no_nan(y_true, mask)
+        y_pred = tf.math.multiply_no_nan(y_pred, mask)
+        y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
+
+        y_pred_final = tf.cond(nmodelpred == 2, averagepreds(y_pred), y_pred)
+
+        # Custom loss sub-groups
+        sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]])
+        sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]])
+        sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, nsubgroups[0]:nsubgroups[1]])
+        sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, nsubgroups[0]:nsubgroups[1]])
+        closssubgroups = tf.math.abs(sumtrueg1-sumpredg1) + tf.math.abs(sumtrueg2-sumpredg2)
+
+        closs = closssubgroups + mean_squared_error(y_true, y_pred_final)
+        return tf.math.divide_no_nan(closs, tf.cast(numfinite, tf.float32))
+    return cl1
+#######
 
 def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
     def sl1(y_true, y_pred):
@@ -186,14 +219,13 @@ def unet(inputs, filters=[2,4,8,16,32], dropout=0.5):
     # conv9 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv9)  # ALTERADO
     # conv9 = BatchNormalization()(conv9)  # ALTERADO
     # conv9 = Activation('relu')(conv9)  # ALTERADO
-
-
+    
     # New
     aux = concatenate([conv9, inputs], axis=3)
     # aux = conv9
-
-    output = Conv2D(1, 1, activation='linear')(aux)
-
+    print("in UNET: conv9", conv9.shape, "aux:", aux.shape)
+    output = Conv2D(12, 1, activation='linear')(aux) # CHANGED: Conv2D(1, 1, activation='linear')(aux)
+    print("output of unet:", output.shape)
     return output
 
 
@@ -273,8 +305,9 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         mod.compile(loss='mean_squared_error', optimizer=optimizers.Adam(lr=lrate))
 
     elif cnnmod == 'unet':
+        
         inputs = Input(shape)
-
+        print("input of the unet:", inputs.shape)
         # # Random transformation to apply
         # randomint = K.constant(random.randint(0, 5))
         #
@@ -307,10 +340,13 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         #                      exclusive=True)
 
         result = unet(inputs, filters, dropout)
+        resultModified = [result[:, :, :, 0:5], result[:, :, :, -7:]]
+        print("EDO", len(resultModified), resultModified[0].shape)
         # result = Concatenate()([processed_a, processed_b])
         mod = Model(inputs=inputs, outputs=result)
-
-        sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+        print("MOD", mod)
+        sl1 = custom_loss_fn(nsubgroups = [5, 7], nmodelpred = 1)
+        #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
         mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
 
         # Version 2, c)
@@ -397,6 +433,7 @@ def createpatches(X, patchsize, padding, stride=1, cstudy=None):
             fp = np.memmap(cstudy + '.dat', dtype='float32', mode='w+', shape=patches.shape)
             fp[:] = patches[:]
             fp = fp.reshape(-1, patchsize, patchsize, X.shape[2])
+        print("fp in ku:", fp.shape)
         return fp
     else:
         if padding:
@@ -410,8 +447,8 @@ def createpatches(X, patchsize, padding, stride=1, cstudy=None):
         patches = extract_patches_2d(newX, [16, 16])
         patches[patches == -9999999] = np.nan
         patches = patches.reshape(-1, patchsize, patchsize, X.shape[2])
+        print("patches in ku:", patches.shape)
         return patches
-
 
 def reconstructpatches(patches, image_size, stride):
     i_h, i_w = image_size[:2]
@@ -436,6 +473,6 @@ def reconstructpatches(patches, image_size, stride):
     #     variance[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += (p - mean[i * stride:i * stride + p_h, j * stride:j * stride + p_w]) ** 2
     #     p[ctignore] = np.nan
     # variance = np.divide(variance, patch_count, out=np.zeros_like(variance), where=patch_count != 0)
-
+    print("mean in Reconstructs:", mean.shape)
     return mean
     # return [mean, variance]
