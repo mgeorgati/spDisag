@@ -430,7 +430,7 @@ def createpatches(X, city, ROOT_DIR, patchsize, padding, stride=1, cstudy=None):
             newX[np.isnan(newX)] = -9999999
             patches = extract_patches_2d(newX, [16, 16])
             patches[patches == -9999999] = np.nan
-            fp = np.memmap(ROOT_DIR + "/Temp/{}/".format(city) +cstudy + '.dat', dtype='float32', mode='w+', shape=patches.shape)
+            fp = np.memmap(ROOT_DIR + "/Temp/{}/".format(city) + cstudy + '.dat', dtype='float32', mode='w+', shape=patches.shape)
             fp[:] = patches[:]
             fp = fp.reshape(-1, patchsize, patchsize, X.shape[2])
         print("fp in ku:", fp.shape)
