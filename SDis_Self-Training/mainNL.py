@@ -45,7 +45,7 @@ def process_data(attr_value):
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
         templateraster = '{}_template_100.tif'.format(city)
-        if isinstance(attr_value, list):
+        if isinstance(attr_va
             for i in attr_value:
                 outputNameDasy = "/Results/{}/Dasy/".format(city) + str(year) + '_' + city + '_' + i + '_dasy.tif'
                 run_dasy(ancillary_path, year, city, i, outputNameDasy, ROOT_DIR, popraster, key) 
@@ -61,8 +61,7 @@ def process_data(attr_value):
         inputDataset = [ 'AIL12'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
         iterMax = 2
         for i in inputDataset:
-            
-            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, python_scripts_folder_path)
+            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, gdal_rasterize_path)
     
     if verMassPreserv == "yes":
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####

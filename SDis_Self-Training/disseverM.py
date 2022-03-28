@@ -98,7 +98,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         print(cnnmod)
         padd = True if cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg' else False
         print(cstudyad)
-        ancpatches = ku.createpatches(ancdatasets, patchsize, padding=padd, stride=1, cstudy=cstudyad)
+        ancpatches = ku.createpatches(ancdatasets,city, ROOT_DIR, patchsize, padding=padd, stride=1, cstudy=cstudyad)
         print("ancpatches = patch of the ancillary:", ancpatches.shape)
         ancdatasets = ancdatasets * ancvarsmask
 
@@ -124,7 +124,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0
             disseverdatasetA = disseverdatasetA * dissmask
-            disspatches = ku.createpatches(disseverdatasetA, patchsize, padding=padd, stride=1)
+            disspatches = ku.createpatches(disseverdatasetA, city, ROOT_DIR, patchsize, padding=padd, stride=1)
             print(disspatches.shape, "this the demo input")
             print('| -- Fitting the model')
             fithistory = caret.fitcnn(ancpatches, disspatches, p, ROOT_DIR, city, cnnmod=cnnmod, cnnobj=cnnobj, casestudy=casestudy,
