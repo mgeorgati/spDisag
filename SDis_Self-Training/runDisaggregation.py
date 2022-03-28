@@ -5,7 +5,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-import itertools
+import itertools, random
 from mainFunctions.basic import createFolder
 from pathlib import Path
 import numpy as np
@@ -19,7 +19,7 @@ os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, inputDataset, iterMax, python_scripts_folder_path):
+def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, inputDataset, iterMax, gdal_rasterize_path):
     """[summary]
 
     Args:
@@ -34,7 +34,7 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
     psamplesopts = [[1]] # [0.0625], [[0.0625], [0.03125]], [[0.03125, 0.0625]]]
     epochspiopts = [10]
     batchsizeopts = [64] # 256, 1024ß
-    learningrateopts = [0.001] # 0.0, 0.001, census-0.0001
+    learningrateopts = [0.1] # 0.0, 0.001, census-0.0001 #changed from 0.001
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]
     perc2evaluateopts = [1]
@@ -192,7 +192,7 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                 f.close()
                 print(outfile) 
                 #Write the merged tif file 
-                cmd_tif_merge = """python {0}/gdal_merge.py -o "{1}" -separate {2} """.format(python_scripts_folder_path, outfile, str_files)
+                cmd_tif_merge = """python {0}/gdal_merge.py -o "{1}" -separate {2} """.format(gdal_rasterize_path, outfile, str_files)
                 print(cmd_tif_merge)
                 subprocess.call(cmd_tif_merge, shell=False)
                 yraster = outfile
@@ -216,10 +216,86 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                 for i in range(len(dissdatasetList)):
                     dissdataset = dissdatasetList[i]
                     val = attr_value[i]
-                    print(dissdataset.shape, np.nanmax(dissdataset))
+                    #print(dissdataset.shape, np.nanmax(dissdataset))
                     print('- Writing raster to disk...')
                     osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_' + casestudy + '_' + val + '.tif')#
-        #__________________________
+            else:
+                print("This is for the CNN") #UNCOMMENT IT FOR CNN
+                
+                for cnnmodel in cnnmodelopts:
+                    if cnnmodel == 'lenet':
+                        print('Lenet')
+                        filtersopts = [[14, 28, 56, 112, 224]]
+                        patchsizeopts = [7]
+                    elif cnnmodel == 'vgg':
+                        print('VGG')
+                        filtersopts = [[8, 16, 32, 64, 512]]
+                        patchsizeopts = [32]
+                    elif cnnmodel.endswith('unet'):
+                        print('U-Net')
+                        filtersopts = [[8, 16, 32, 64, 128]]
+                        patchsizeopts = [16]
+                    elif cnnmodel == 'uenc':
+                        print('U-Net Encoder')
+                        filtersopts = [[8, 16, 32, 64, 128]]
+                        patchsizeopts = [16]
+                    else:
+                        filtersopts = [[14, 28, 56, 112, 224]]
+                        patchsizeopts = [7]
+
+                    for (lossweights, batchsize, epochpi, learningrate,
+                        filters, patchsize, extendeddataset,
+                        hubervalue, stdivalue, dropout) in itertools.product(lossweightsopts,
+                                                                            batchsizeopts,
+                                                                            epochspiopts,
+                                                                            learningrateopts,
+                                                                            filtersopts,
+                                                                            patchsizeopts,
+                                                                            extendeddatasetopts,
+                                                                            hubervalueopts,
+                                                                            stdivalueopts,
+                                                                            dropoutopts):
+                        print('\n--- Running dissever with the following CNN configuration:')
+                        print('- Method:', cnnmodel, '| Percentage of sampling:', psamples,
+                            '| Epochs per iteration:', epochpi, '| Batch size:', batchsize,
+                            '| Learning rate:', learningrate, '| Filters:', filters,
+                            '| Loss weights:', lossweights, '| Patch size:', patchsize,
+                            '| Extended dataset:', extendeddataset, '| Huber value:', hubervalue,
+                            '| Stdi value:', stdivalue, '| Dropout:', dropout)
+
+                        random.seed(SEED)
+                        np.random.seed(SEED)
+                        import tensorflow as tf
+                        tf.keras.backend.clear_session()
+                        tf.random.set_seed(SEED)
+                        physical_devices = tf.config.experimental.list_physical_devices('GPU')
+                        for gpu_instance in physical_devices:
+                            tf.config.experimental.set_memory_growth(gpu_instance, True)
+
+                        yraster = outfile
+                        casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
+                                    '_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
+                                    '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
+                        dissdatasetList = disseverM.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, min_iter=3, max_iter=iterMax,
+                                                                    perc2evaluate=perc2evaluate,
+                                                                    poly2agg=key,
+                                                                    rastergeo=rastergeo, method=method, p=psamples,
+                                                                    cnnmod=cnnmodel, patchsize=patchsize, batchsize=batchsize,
+                                                                    epochspi=epochpi, lrate=learningrate, filters=filters,
+                                                                    lweights=lossweights, extdataset=extendeddataset,
+                                                                    yraster=yraster, converge=1.5,
+                                                                    hubervalue=hubervalue, stdivalue=stdivalue,
+                                                                    dropout=dropout,
+                                                                    casestudy=casestudy,
+                                                                    verbose=True)
+
+                        for i in range(len(dissdatasetList)):
+                            dissdataset = dissdatasetList[i]
+                            val = attr_value[i]
+                            #print(dissdataset.shape, np.nanmax(dissdataset))
+                            print('- Writing raster to disk...')
+                            osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CL1' + casestudy + '_' + val + '.tif')
+        # ______________________
         # if input is not a list
         else: 
             if ymethod == 'Pycno':
@@ -245,77 +321,77 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                 osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever00_' + casestudy + '_' + attr_value + '.tif')#
             else:
                 print("This is for the CNN") #UNCOMMENT IT FOR CNN
-                """
+                
                 for cnnmodel in cnnmodelopts:
-                if cnnmodel == 'lenet':
-                    print('Lenet')
-                    filtersopts = [[14, 28, 56, 112, 224]]
-                    patchsizeopts = [7]
-                elif cnnmodel == 'vgg':
-                    print('VGG')
-                    filtersopts = [[8, 16, 32, 64, 512]]
-                    patchsizeopts = [32]
-                elif cnnmodel.endswith('unet'):
-                    print('U-Net')
-                    filtersopts = [[8, 16, 32, 64, 128]]
-                    patchsizeopts = [16]
-                elif cnnmodel == 'uenc':
-                    print('U-Net Encoder')
-                    filtersopts = [[8, 16, 32, 64, 128]]
-                    patchsizeopts = [16]
-                else:
-                    filtersopts = [[14, 28, 56, 112, 224]]
-                    patchsizeopts = [7]
+                    if cnnmodel == 'lenet':
+                        print('Lenet')
+                        filtersopts = [[14, 28, 56, 112, 224]]
+                        patchsizeopts = [7]
+                    elif cnnmodel == 'vgg':
+                        print('VGG')
+                        filtersopts = [[8, 16, 32, 64, 512]]
+                        patchsizeopts = [32]
+                    elif cnnmodel.endswith('unet'):
+                        print('U-Net')
+                        filtersopts = [[8, 16, 32, 64, 128]]
+                        patchsizeopts = [16]
+                    elif cnnmodel == 'uenc':
+                        print('U-Net Encoder')
+                        filtersopts = [[8, 16, 32, 64, 128]]
+                        patchsizeopts = [16]
+                    else:
+                        filtersopts = [[14, 28, 56, 112, 224]]
+                        patchsizeopts = [7]
 
-                for (lossweights, batchsize, epochpi, learningrate,
-                    filters, patchsize, extendeddataset,
-                    hubervalue, stdivalue, dropout) in itertools.product(lossweightsopts,
-                                                                        batchsizeopts,
-                                                                        epochspiopts,
-                                                                        learningrateopts,
-                                                                        filtersopts,
-                                                                        patchsizeopts,
-                                                                        extendeddatasetopts,
-                                                                        hubervalueopts,
-                                                                        stdivalueopts,
-                                                                        dropoutopts):
-                    print('\n--- Running dissever with the following CNN configuration:')
-                    print('- Method:', cnnmodel, '| Percentage of sampling:', psamples,
-                        '| Epochs per iteration:', epochpi, '| Batch size:', batchsize,
-                        '| Learning rate:', learningrate, '| Filters:', filters,
-                        '| Loss weights:', lossweights, '| Patch size:', patchsize,
-                        '| Extended dataset:', extendeddataset, '| Huber value:', hubervalue,
-                        '| Stdi value:', stdivalue, '| Dropout:', dropout)
+                    for (lossweights, batchsize, epochpi, learningrate,
+                        filters, patchsize, extendeddataset,
+                        hubervalue, stdivalue, dropout) in itertools.product(lossweightsopts,
+                                                                            batchsizeopts,
+                                                                            epochspiopts,
+                                                                            learningrateopts,
+                                                                            filtersopts,
+                                                                            patchsizeopts,
+                                                                            extendeddatasetopts,
+                                                                            hubervalueopts,
+                                                                            stdivalueopts,
+                                                                            dropoutopts):
+                        print('\n--- Running dissever with the following CNN configuration:')
+                        print('- Method:', cnnmodel, '| Percentage of sampling:', psamples,
+                            '| Epochs per iteration:', epochpi, '| Batch size:', batchsize,
+                            '| Learning rate:', learningrate, '| Filters:', filters,
+                            '| Loss weights:', lossweights, '| Patch size:', patchsize,
+                            '| Extended dataset:', extendeddataset, '| Huber value:', hubervalue,
+                            '| Stdi value:', stdivalue, '| Dropout:', dropout)
 
-                    random.seed(SEED)
-                    np.random.seed(SEED)
-                    import tensorflow as tf
-                    tf.keras.backend.clear_session()
-                    tf.random.set_seed(SEED)
-                    physical_devices = tf.config.experimental.list_physical_devices('GPU')
-                    for gpu_instance in physical_devices:
-                        tf.config.experimental.set_memory_growth(gpu_instance, True)
+                        random.seed(SEED)
+                        np.random.seed(SEED)
+                        import tensorflow as tf
+                        tf.keras.backend.clear_session()
+                        tf.random.set_seed(SEED)
+                        physical_devices = tf.config.experimental.list_physical_devices('GPU')
+                        for gpu_instance in physical_devices:
+                            tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-                    yraster = os.path.join('Results', indicator, 'Baselines', (ymethod + '_200m.tif'))
-                    casestudy = indicator + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
-                                '_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
-                                '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
-                    dissdataset, rastergeo = dissever.runDissever(fshape, ancdts, min_iter=29, max_iter=30,
-                                                                perc2evaluate=perc2evaluate,
-                                                                poly2agg=admboundary2.upper(),
-                                                                rastergeo=rastergeo, method=method, p=psamples,
-                                                                cnnmod=cnnmodel, patchsize=patchsize, batchsize=batchsize,
-                                                                epochspi=epochpi, lrate=learningrate, filters=filters,
-                                                                lweights=lossweights, extdataset=extendeddataset,
-                                                                yraster=yraster, converge=1.5,
-                                                                hubervalue=hubervalue, stdivalue=stdivalue,
-                                                                dropout=dropout,
-                                                                casestudy=casestudy,
-                                                                verbose=True)
+                        yraster = ROOT_DIR + '/Results/{2}/{0}/{1}_{2}_{3}_dasy.tif'.format(ymethod, year, city, attr_value)
+                        casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
+                                    '_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
+                                    '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
+                        dissdataset, rastergeo = dissever.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, min_iter=1, max_iter=2,
+                                                                    perc2evaluate=perc2evaluate,
+                                                                    poly2agg=key,
+                                                                    rastergeo=rastergeo, method=method, p=psamples,
+                                                                    cnnmod=cnnmodel, patchsize=patchsize, batchsize=batchsize,
+                                                                    epochspi=epochpi, lrate=learningrate, filters=filters,
+                                                                    lweights=lossweights, extdataset=extendeddataset,
+                                                                    yraster=yraster, converge=1.5,
+                                                                    hubervalue=hubervalue, stdivalue=stdivalue,
+                                                                    dropout=dropout,
+                                                                    casestudy=casestudy,
+                                                                    verbose=True)
 
-                    print('- Writing raster to disk...')
-                    osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + "/Results/" + method + 'dissever_' + casestudy + '.tif')
-                    """
+                        print('- Writing raster to disk...')
+                        osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + '/Results/{}/'.format(city)  + method + 'dissever00_' + casestudy + '.tif')
+                    
 
     osgu.removeShape(fshape, city)
 
