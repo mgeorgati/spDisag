@@ -2,12 +2,12 @@ import glob
 
 from config.definitions import (ROOT_DIR, ancillary_path, pop_path,
                                 python_scripts_folder_path, year)
-#from evalResultsNL import eval_Results_ams
+from evalResultsNL import eval_Results_ams
 from mainFunctions.basic import createFolder
 from runDasymetricMapping import run_dasy
-from runDisaggregation import run_disaggregation
+#from runDisaggregation import run_disaggregation
 from runPycnophylacticInterpolation import run_pycno
-from verifyMassPreserving import verifyMassPreserv
+#from verifyMassPreserving import verifyMassPreserv
 
 #-------- GLOBAL ARGUMENTS --------
 city='ams'
@@ -18,9 +18,9 @@ ancillary_path_case = ancillary_path +"{}".format(city)
 #-------- PROCESS: GHS RPREPARATION --------
 run_Pycno = "no"
 run_Dasy = "no"
-run_Disaggregation = "yes"
+run_Disaggregation = "no"
 verMassPreserv = "no"
-run_EvaluationGC_ams = "no"
+run_EvaluationGC_ams = "yes"
 
 #-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
 # If it is a list it will be calculated in multi-output model 
@@ -29,7 +29,7 @@ run_EvaluationGC_ams = "no"
 # 7 Migrant Groups : 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
 
 #'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
-attr_value = ['children' ]
+attr_value = ['totalpop','children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]
 #print(attr_value[0:5], attr_value[-7:])
 
 def process_data(attr_value):
@@ -62,7 +62,8 @@ def process_data(attr_value):
         iterMax = 2
         for i in inputDataset:
             for k in attr_value:
-                run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, k, key, i, iterMax, python_scripts_folder_path)
+                print("DONT DO IT HERE")
+                #run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, k, key, i, iterMax, python_scripts_folder_path)
     
     if verMassPreserv == "yes":
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
@@ -89,7 +90,7 @@ def process_data(attr_value):
         if isinstance(attr_value, list):
             for i in attr_value:
                 print("Evaluation Not possible")
-                #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
+                eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
         else:
             print("Evaluation Not possible")
             #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, attr_value)
