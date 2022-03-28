@@ -1,11 +1,11 @@
 import glob
 
 from config.definitions import (ROOT_DIR, ancillary_path, pop_path,
-                                python_scripts_folder_path, year)
+                                gdal_rasterize_path, year)
 from evalResultsNL import eval_Results_ams
 from mainFunctions.basic import createFolder
 from runDasymetricMapping import run_dasy
-#from runDisaggregation import run_disaggregation
+from runDisaggregation import run_disaggregation
 from runPycnophylacticInterpolation import run_pycno
 #from verifyMassPreserving import verifyMassPreserv
 
@@ -18,9 +18,9 @@ ancillary_path_case = ancillary_path +"{}".format(city)
 #-------- PROCESS: GHS RPREPARATION --------
 run_Pycno = "no"
 run_Dasy = "no"
-run_Disaggregation = "no"
+run_Disaggregation = "yes"
 verMassPreserv = "no"
-run_EvaluationGC_ams = "yes"
+run_EvaluationGC_ams = "no"
 
 #-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
 # If it is a list it will be calculated in multi-output model 
@@ -29,7 +29,7 @@ run_EvaluationGC_ams = "yes"
 # 7 Migrant Groups : 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
 
 #'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
-attr_value = ['totalpop','children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]
+attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]
 #print(attr_value[0:5], attr_value[-7:])
 
 def process_data(attr_value):
@@ -61,9 +61,8 @@ def process_data(attr_value):
         inputDataset = [ 'AIL12'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
         iterMax = 2
         for i in inputDataset:
-            for k in attr_value:
-                print("DONT DO IT HERE")
-                #run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, k, key, i, iterMax, python_scripts_folder_path)
+            
+            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, python_scripts_folder_path)
     
     if verMassPreserv == "yes":
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####

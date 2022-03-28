@@ -31,6 +31,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     else:
         cstudyad = None
 
+    print("here is the 1st ancdatasets: ancillary:", ancdatasets.shape)
     nrowsds = ancdatasets[:,:,0].shape[1]
     ncolsds = ancdatasets[:,:,0].shape[0]
     idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds],city=city)[0] # ID's polígonos originais
@@ -78,7 +79,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     dissmask = np.copy(idsdataset)
     dissmask[~np.isnan(dissmask)] = 1
     ancvarsmask = np.dstack([dissmask] * ancdatasets.shape[2])
-    
+    print("ancvarsmask:", ancvarsmask.shape )
     dissmaskList=[]
     for i in range(len(attr_value)):
         dissmaskList.append(dissmask)
@@ -89,21 +90,25 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     olddisseverdataset = disseverdatasetA
      
     if method.endswith('cnn'):
-        print("This is for the CNN") #UNCOMMENT IT FOR CNN
+        print("This is for the CNN") 
         
         # Create anc variables patches (includes replacing nans by 0, and 0 by nans)
         print('| Creating ancillary variables patches')
         # ancdatasets[np.isnan(ancdatasets)] = 0
+        print(cnnmod)
         padd = True if cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg' else False
+        print(cstudyad)
         ancpatches = ku.createpatches(ancdatasets, patchsize, padding=padd, stride=1, cstudy=cstudyad)
+        print("ancpatches = patch of the ancillary:", ancpatches.shape)
         ancdatasets = ancdatasets * ancvarsmask
 
         # Compile model and save initial weights
         cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
-        cnnobj.save_weights('Temp/{}/models_'.format(city) + casestudy + '.h5')
+        print("not Saving the weigths") 
+        cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
         
-
+    print("Saving the weigths")
     lasterror = -np.inf
     lowesterror = np.inf
     start_timeT = time.time()
@@ -118,11 +123,11 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0
-            disseverdataset = disseverdataset * dissmask
-            disspatches = ku.createpatches(disseverdataset, patchsize, padding=padd, stride=1)
-
+            disseverdatasetA = disseverdatasetA * dissmask
+            disspatches = ku.createpatches(disseverdatasetA, patchsize, padding=padd, stride=1)
+            print(disspatches.shape, "this the demo input")
             print('| -- Fitting the model')
-            fithistory = caret.fitcnn(ancpatches, disspatches, p, cnnmod=cnnmod, cnnobj=cnnobj, casestudy=casestudy,
+            fithistory = caret.fitcnn(ancpatches, disspatches, p, ROOT_DIR, city, cnnmod=cnnmod, cnnobj=cnnobj, casestudy=casestudy,
                                     epochs=epochspi, batchsize=batchsize, extdataset=extdataset)
 
             # New
@@ -130,8 +135,13 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
 
             print('| -- Predicting new values')
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
-                                            ancpatches, disseverdataset.shape, batchsize=batchsize)
-
+                                            ancpatches, disseverdatasetA.shape, batchsize=batchsize)
+            print("predicted maps:", len(predictedmaps))
+            for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
+            #predictedmaps= predictedmaps[0]
+            #predictedmaps = predictedmaps.reshape(predictedmaps.shape[0],predictedmaps.shape[1], 1, predictedmaps.shape[2])
+            #This is a list of arrays of (440,445,1,n)  
+            
             # # Including variance
             # predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
             #                                  ancpatches, disseverdataset.shape, batchsize=batchsize)
@@ -158,17 +168,17 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             
             print('| -- Predicting new values')
             predictedmaps = caret.predictM(mod, ancdatasets, attr_value)
-            
+            print(len(predictedmaps))
+            print(predictedmaps[0].shape)
             #This is a list of arrays of (440,445,1,n)  
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
         
         print("--", len(predictedmaps)) 
         bestmaepredictedmaps = float("inf")
         newPredList=[]
+        
         for i, predmap in enumerate(predictedmaps):
             
-            print(i, np.nanmax(predmap), predmap.shape)
-            print(len(idpolvaluesList))
             val = attr_value[i]
             print("---", val, "---")
             # Replace NaN zones by Nan
@@ -195,6 +205,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             
             idpolvalues2e = dict((k, previdpolvalues[k]) for k in pairslist if k in list(previdpolvalues.keys())) 
             polygonarea2e = dict((k, polygonareas[k]) for k in pairslist if k in list(polygonareas.keys()))
+            
             predmap = predmap[:,:,:,0]
             predmap2e = predmap2e[:,:,:,0]
             
@@ -212,7 +223,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             polygonratios = {k: idpolvalues[k] / stats[k] for k in stats.keys() & idpolvalues}
             polygonratios2e = {k: idpolvalues2e[k] / stats2e[k] for k in stats2e.keys() & idpolvalues2e}
             idpolvalues = previdpolvalues
-            
             
             # Mass-preserving adjustment
             for polid in polygonratios:
