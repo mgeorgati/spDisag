@@ -45,7 +45,7 @@ def process_data(attr_value):
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
         templateraster = '{}_template_100.tif'.format(city)
-        if isinstance(attr_va
+        if isinstance(attr_val):
             for i in attr_value:
                 outputNameDasy = "/Results/{}/Dasy/".format(city) + str(year) + '_' + city + '_' + i + '_dasy.tif'
                 run_dasy(ancillary_path, year, city, i, outputNameDasy, ROOT_DIR, popraster, key) 

@@ -345,8 +345,8 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         # result = Concatenate()([processed_a, processed_b])
         mod = Model(inputs=inputs, outputs=result)
         print("MOD", mod)
-        sl1 = custom_loss_fn(nsubgroups = [5, 7], nmodelpred = 1)
-        #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+        #sl1 = custom_loss_fn(nsubgroups = [5, 7], nmodelpred = 1)
+        sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
         mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
 
         # Version 2, c)
