@@ -2,29 +2,30 @@ import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import SGDRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.multioutput import MultiOutputRegressor
-from catboost import CatBoostRegressor, MultiRegressionCustomObjective
-from sklearn.model_selection import RandomizedSearchCV
-import numpy as np, math
-import nputils as npu
-from numpy import random
+import math
 #import xgboost as xgb
 import time
-import pandas as pd
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 #matplotlib.use('TKAgg')
 import seaborn as sns
-from mainFunctions.basic import createFolder
-from numpy import random
-
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras import utils
 import tensorflow as tf
+from catboost import CatBoostRegressor, MultiRegressionCustomObjective
+from numpy import random
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.linear_model import LinearRegression, SGDRegressor
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.multioutput import MultiOutputRegressor
+from tensorflow.keras import utils
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+
+import kerasutils as ku
+import nputils as npu
+from mainFunctions.basic import createFolder
+
 SEED = 42
 
 def fitlm(X, y):
@@ -36,7 +37,6 @@ def fitsgdregressor(X, y, batchsize, lrate, epoch):
     mod = SGDRegressor(max_iter=epoch, alpha=0, learning_rate='constant', eta0=lrate, verbose=1)
     mod = mod.fit(X, y)
     return mod
-
 
 def plot_feature_importance(ROOT_DIR, importance,names, model_type, casestudy, city):
     #-------- Plot an image for the importance of variables --------
@@ -64,7 +64,7 @@ def plot_feature_importance(ROOT_DIR, importance,names, model_type, casestudy, c
     
 def fitrf(X, y, casestudy, city, ROOT_DIR):
     # mod = RandomForestRegressor(n_estimators = 10, random_state=SEED) # n_estimators = 10
-    mod = RandomForestRegressor(n_estimators = 100, random_state=SEED, criterion='squared_error') # absolute_error, 'squared_error'
+    mod = RandomForestRegressor(n_estimators = 2, random_state=SEED, criterion='squared_error') # absolute_error, 'squared_error'
     mod = mod.fit(X, y)
     feature_names = [f"feature {i}" for i in range(X.shape[1])]
     importances = mod.feature_importances_
@@ -154,10 +154,55 @@ def fitxgbtreeM(X, y):
     mod = gbm.fit(X, y)
     return mod
 
+def con_ten(convert_func):
+  convert_func = tf.convert_to_tensor(convert_func, dtype=tf.int64)
+  return convert_func
+
+def custom_loss_fn(labels, predictions):
+	# Assume that there are 5 output quantities. 
+    # The first three should be summed to get the total, and the last two form another group that should be summed to get the total.                           
+    sum1g1 = tf.math.reduce_sum(predictions[:,0:5])
+    sum2g1 = tf.math.reduce_sum(labels[:,0:5])
+    sum1g2 = tf.math.reduce_sum(predictions[:,-7:])
+    sum2g2 = tf.math.reduce_sum(labels[:,-7:])
+    return tf.math.abs(sum1g1-sum2g1) + tf.math.abs(sum1g2-sum2g2) + tf.keras.losses.mean_squared_error(labels, predictions)
+
+def make_input_fn(X, y, n_epochs=None, shuffle=True):
+    NUM_EXAMPLES = len(y)
+    def input_fn():
+        dataset = tf.data.Dataset.from_tensor_slices((X.to_dict(orient='list'), y))
+        if shuffle: dataset = dataset.shuffle(NUM_EXAMPLES)
+        dataset = dataset.repeat(n_epochs)
+        dataset = dataset.batch(NUM_EXAMPLES)
+        
+        return dataset
+    return input_fn()
+
+def fittfBTR(X, y, casestudy):
+    print("XShape", X.shape, type(X))
+    print("yShape", y.shape, type(y))
+    feature_columns = []
+    for feature_name in range(y.shape[1]): feature_columns.append(tf.feature_column.numeric_column(str(feature_name), dtype=tf.float32))
+    train_data = make_input_fn(X, y)
+    eval_data = make_input_fn(X, y)
+    Xtensor = con_ten(X)
+    ytensor = con_ten(y)
+    print("Converted numpy array into tensor:")
+    
+    #test_data = make_input_fn(dfeval, y_eval, shuffle=False, n_epochs=1)
+    print("last", train_data)
+    my_head = tf.estimator.RegressionHead(label_dimension= len(y), loss_fn = custom_loss_fn)
+    model = tf.estimator.BoostedTreesEstimator(feature_columns, head=my_head, n_batches_per_layer=1, n_trees=10, max_depth=5)
+     
+    mod = model.train(train_data, max_steps=5)  #max_steps=100
+    
+    #predictions = list(model.predict(test))
+    return mod
+    
 def fit(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
     X = X.reshape((-1, X.shape[2]))
     y = np.ravel(y)
-
+    print('DOES IT COME IN HERE?')
     relevantids = np.where(~np.isnan(y))[0]
     relevsamples = np.random.choice(len(relevantids), round(len(relevantids) * p[0]), replace=False)
     idsamples = relevantids[relevsamples]
@@ -222,12 +267,14 @@ def fitM(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
     elif(method.endswith('catbr')):
         print('|| Fit: CatBoostRegressor')
         return fitcatbr(X, y, casestudy, city, ROOT_DIR)
+    elif(method.endswith('aptfbtr')):
+        print('|| Fit: Tensorflow Boosted Trees Regressor')
+        fittfBTR(X, y, casestudy)
     elif(method.endswith('xgbtree')):
         print('|| Fit: XGBTree')
         #return fitxgbtreeM(X, y)
     else:
         return None
-
 
 def get_callbacks():
     return [
@@ -236,6 +283,13 @@ def get_callbacks():
         EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
     ]
 
+def predictM(mod, X, attr_value):
+    newX = X.reshape((-1, X.shape[2]))
+    pred = mod.predict(newX)
+    # pred = np.exp(pred)-1
+    pred = pred.reshape(X.shape[0], X.shape[1], len(attr_value)) #HER IT NEED TO PASS len(attr_value)
+    predlist = np.dsplit(pred, len(attr_value))
+    return predlist #[pred]
 
 class DataGenerator(utils.Sequence):
     'Generates data for Keras'
@@ -257,15 +311,16 @@ class DataGenerator(utils.Sequence):
         batch_X = self.X[idsamplesbatch]
         batch_X[np.isnan(batch_X)] = 0 ## Alterado
         batch_y = self.y[idsamplesbatch]
+        print("Generator output:", np.array(batch_X).shape, np.array(batch_y).shape)
         return np.array(batch_X), np.array(batch_y)
 
 
-def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
+def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
     tf.random.set_seed(SEED)
 
     # Reset model weights
     print('------- LOAD INITIAL WEIGHTS')
-    cnnobj.load_weights('Temp/models_' + casestudy + '.h5')
+    cnnobj.load_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
 
     if cnnmod == 'lenet':
         print('| --- Fit - 1 resolution Le-Net')
@@ -325,12 +380,13 @@ def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
             return cnnobj.fit(X[idsamples, :, :, :], y[idsamples], epochs=epochs, batch_size=batchsize)
 
     elif cnnmod.endswith('unet'):
+        print(y.shape)
         # Compute midd pixel from patches
         middrow, middcol = int((y.shape[1]-1)/2), int(round((y.shape[2]-1)/2))
-
+        print(middcol, middrow)
         # Train only with patches having middpixel different from NaN
         relevantids = np.where(~np.isnan(y[:,middrow,middcol,0]))[0]
-
+        print(relevantids.shape)
         # Train only with patches having finit values in all pixels
         # relevantids = np.where(~np.isnan(y).any(axis=(1,2,3)))[0]
 
@@ -354,7 +410,10 @@ def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
         print('Number of instances (All, >0, X%>0):', y.shape[0], len(relevantids), len(idsamples))
 
         if(cnnmod == 'unet'):
+            print("X shape UNET", X.shape)
+            print("y shape UNET = demo", y.shape)
             if extdataset:
+                #NOT DEFINED
                 Xfit = X[idsamples, :, :, :]
                 yfit = y[idsamples]
                 yfit[np.isnan(yfit)] = 0
@@ -386,9 +445,10 @@ def fitcnn(X, y, p, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
                     # hislist = [cnnobj.fit(Xfit, yfit, epochs=epochs, batch_size=batchsize)]
 
                     training_generator = DataGenerator(X, y, idsamples, batch_size=batchsize, p=p[0])
-                    hislist = [cnnobj.fit(training_generator, epochs=epochs)]
+                    hislist = [cnnobj.fit(training_generator, epochs=epochs)] #This is history object storing info, e.g. for loss at each epoch
 
                     # hislist = [cnnobj.fit(Xfit, yfit, epochs=epochs, batch_size=batchsize, callbacks=get_callbacks())]
+                    print("???? hislist", hislist)
                     return hislist
 
         elif(cnnmod.startswith('2r')):
@@ -416,8 +476,10 @@ def predict(mod, X):
 
 
 def predictloop(cnnmod, patches, batchsize):
+    print("in predictloop, patches:", patches.shape)
     # Custom batched prediction loop
-    final_shape = [patches.shape[0], patches.shape[1], patches.shape[2], 1]
+    final_shape = [patches.shape[0], patches.shape[1], patches.shape[2], 12] #This 12 needs to be changes based on input demo ----!!!----
+    print("in predictloop, final_patches:", final_shape)
     y_pred_probs = np.empty(final_shape,
                             dtype=np.float32)  # pre-allocate required memory for array for efficiency
 
@@ -449,9 +511,11 @@ def predictloop(cnnmod, patches, batchsize):
 
         i = i+1
         if(i%1000 == 0): print('»» Batch', i, '/', len(batch_indices), end='\r')
-
+    
     return y_pred_probs
 
+def channelSplit(image):
+    return np.dsplit(image,image.shape[-1])
 
 def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize, stride=1):
     if mod == 'lenet':
@@ -486,12 +550,15 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
             else:
                 print('| --- Predicting new patches, 1 resolution U-Net')
                 predhr = predictloop(obj, ancpatches, batchsize=batchsize)
-
+                print(predhr.shape, ":predhr")
                 print('| ---- Reconstructing HR image from patches..')
                 predhr = ku.reconstructpatches(predhr, dissshape, stride)
                 # predhr = np.exp(predhr)-1
-
-                return [predhr]
+                print(predhr.shape, ":predhr2")
+                predhrList = []
+                predhrList = channelSplit(predhr)
+                print(len(predhrList))
+                return predhrList
                 # # Including variance
                 # return [[predhr[0]], predhr[1]]
 
