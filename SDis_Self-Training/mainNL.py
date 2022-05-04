@@ -69,7 +69,7 @@ def process_data(attr_value):
     
     if run_Disaggregation == "yes":
         ##### -------- PROCESS: TRAIN REGRESSION MODEL  -------- #####
-        methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apxgbtree (XGBoost), apcnn (CNN), 'apcatbr' (Catboost Regressor), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
+        methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
         ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
         cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
         # The ancillary datasets are defined in runDisaggregation
