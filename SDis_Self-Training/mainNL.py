@@ -89,7 +89,7 @@ def process_data(attr_value):
         pop_path_case = pop_path + "/{}/".format(city)
         if isinstance(attr_value, list):
             for i in attr_value:
-                print("Evaluation Not possible")
+                print("Evaluation possible")
                 eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
         else:
             print("Evaluation Not possible")

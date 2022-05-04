@@ -14,3 +14,5 @@ Further information can be found in 'Spatial Disaggregation of Population Subgro
 
 Acknowledgements
 This work has been supported by the European Union’s Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu)
+
+## Workflow

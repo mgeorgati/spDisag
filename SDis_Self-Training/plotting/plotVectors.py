@@ -313,12 +313,12 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
     elif evalType == "popdistributionPred":
         print('pre')
         bins = 7
-        if valMax < 200:
-            a=[valMin,1, 25, 50, 75, 100, 150, 200]
+        if valMax < 250:
+            a=[valMin,1, 25, 50, 75, 100, 150, 250]
         elif 700 <= valMax :
             a=[0, 1, 50, 100, 200, 300, 400, 500]
         else:
-            a=[valMin,1, 50, 100, 200, 300, 400, valMax]
+            a=[valMin, 1, 50, 100, 200, 300, 400, valMax]
             #a=[valMin,1, 25, 50, 75, 100, 150, valMax]
         cmap = ListedColormap(["#f1eef600","#ffffb2","#ffd76d", "#fea649", "#f86c30", "#e62f21","#bd0026"])
         norm = colors.BoundaryNorm(a, bins)  
