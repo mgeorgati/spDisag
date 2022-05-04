@@ -23,7 +23,7 @@ A folder with tha ancillary data should be stored in the parent folder. The GHS 
 
 ## Workflow
 A *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, nthe ame of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophilactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. Additional parameters need to be defined for training the regression model, such as the type of the model, the desired training dataset, the input to be used, the number of iterations. 
-For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed.    
+For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.   
 
 #### 1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
 ```
@@ -33,7 +33,7 @@ run_Dasy = "yes"
 ```
 #### 2. TRAIN REGRESSION MODEL ()
 ```
-run_Disaggregation = "no"
+run_Disaggregation = "yes"
 ```
 ##### FURTHER CHOICES NEED TO BE DEFINED, SUCH AS:
 ##### 2.1. SELECT METHOD/MODEL      
@@ -42,9 +42,9 @@ run_Disaggregation = "no"
 
 #### 3. VERIFY MASS PRESERVATION
 ```
-verMassPreserv = "no"
+verMassPreserv = "yes"
 ```
 #### 4. EVALUATE RESULTS
 ```
-run_EvaluationGC_ams = "no"
+run_EvaluationGC_ams = "yes"
 ```
