@@ -33,7 +33,7 @@ def scatterplot(prP):
 
     plt.figure(figsize=(20,20))
 
-    g= sns.lmplot(data=df, x="gt", y="predictions", hue="cr", palette=["#0d2dc1","#ff9c1c","#71b951","#24f33d","#90308f", "#a8a8a8"],ci = None, order=2, scatter_kws={"s":0.5, "alpha": 0.5}, line_kws={"lw":2, "alpha": 0.5}, legend=False) 
+    g = sns.lmplot(data=df, x="gt", y="predictions", hue="cr", palette=["#0d2dc1","#ff9c1c","#71b951","#24f33d","#90308f", "#a8a8a8"],ci = None, order=2, scatter_kws={"s":0.5, "alpha": 0.5}, line_kws={"lw":2, "alpha": 0.5}, legend=False) 
     plt.legend(title= "Land Cover", labels= ['Water','Urban Fabric', 'Agriculture', 'Green Spaces','Industry','Transportation' ], loc='lower right', fontsize=5)
     plt.title('{0}'.format( name), fontsize=11)
     # Set x-axis label
