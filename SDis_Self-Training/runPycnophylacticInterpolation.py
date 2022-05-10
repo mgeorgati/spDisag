@@ -20,7 +20,7 @@ def run_pycno(ROOT_DIR,ancillary_path, year, city, attr_value, popraster, key):
     polygonvaluesdataset, rastergeo = osgu.ogr2raster(fshape, attr=attr_value, template=[rastergeo, nrowsds, ncolsds], city=city)
     pycnodataset, rastergeo = pycno.runPycno(ROOT_DIR, city, idsdataset, polygonvaluesdataset, rastergeo, attr_value, tempfileid=tempfileid)
 
-    osgu.writeRaster(pycnodataset[:, :, 0], rastergeo, ROOT_DIR + "/Results/{1}/Pycno/{0}_{1}_{2}_pycnoWI.tif".format(year, city, attr_value))
+    osgu.writeRaster(pycnodataset[:, :, 0], rastergeo, ROOT_DIR + "/Results/{1}/Pycno/{0}_{1}_{2}_pycno.tif".format(year, city, attr_value))
 
     osgu.removeShape(fshape,city)
     

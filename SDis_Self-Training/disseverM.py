@@ -1,4 +1,4 @@
-import os
+import os, sys
 import time
 import numpy as np
 import rasterio
@@ -10,9 +10,7 @@ import metricsev as mev
 import neigPairs
 import nputils as npu
 import osgeoutils as osgu
-import kerasutils as ku
 import pycno
-import matplotlib.pyplot as plt
 
 def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
                 method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, filters=[2,4,8,16,32],
@@ -88,10 +86,11 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     dissmaskA = dissmask.reshape(dissmask.shape[0],dissmask.shape[1], 1, dissmask.shape[2])
     
     olddisseverdataset = disseverdatasetA
-     
+    
+    """
     if method.endswith('cnn'):
         print("This is for the CNN") 
-        
+    
         # Create anc variables patches (includes replacing nans by 0, and 0 by nans)
         print('| Creating ancillary variables patches')
         # ancdatasets[np.isnan(ancdatasets)] = 0
@@ -107,8 +106,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         print("not Saving the weigths") 
         cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
-        
-    print("Saving the weigths")
+    """
+    
     lasterror = -np.inf
     lowesterror = np.inf
     start_timeT = time.time()
@@ -117,10 +116,11 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         start_time = time.time()
         # if (k%10) == 0:
         #     epochspi = epochspi + 10
-           
+        
         if method.endswith('cnn'):
-            print("This is for the CNN") #UNCOMMENT IT FOR CNN
-            
+            print("You need to change environment and include tensorflow! This refers to the NN")
+            sys.exit()
+            """
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0
             disseverdatasetA = disseverdatasetA * dissmask
@@ -155,7 +155,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             # predictedmapslm = caret.predict(mod, ancdatasets)
             # for i in range(len(predictedmapslm)): predictedmapslm[i] = np.expand_dims(predictedmapslm[i], axis=2)
             # for i in range(len(predictedmaps)): predictedmaps[i] = 0.9 * predictedmaps[i] + 0.1 * predictedmapslm[i]
-            
+        """
         else:
             print('| -- Fitting the model')
             # Replace NaN's by 0

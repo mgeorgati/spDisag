@@ -12,17 +12,17 @@ import numpy as np
 import pandas as pd
 #matplotlib.use('TKAgg')
 import seaborn as sns
-import tensorflow as tf
+#import tensorflow as tf
 from catboost import CatBoostRegressor, MultiRegressionCustomObjective
 from numpy import random
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression, SGDRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.multioutput import MultiOutputRegressor
-from tensorflow.keras import utils
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+#from tensorflow.keras import utils
+#from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-import kerasutils as ku
+#import kerasutils as ku
 import nputils as npu
 from mainFunctions.basic import createFolder
 
@@ -276,12 +276,7 @@ def fitM(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
     else:
         return None
 
-def get_callbacks():
-    return [
-        # ReduceLROnPlateau(monitor='loss', min_delta=0.0, patience=3, factor=0.1, min_lr=5e-6, verbose=1),
-        # EarlyStopping(monitor='loss', min_delta=0.001, patience=3, verbose=1, restore_best_weights=True)
-        EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
-    ]
+
 
 def predictM(mod, X, attr_value):
     newX = X.reshape((-1, X.shape[2]))
@@ -290,7 +285,14 @@ def predictM(mod, X, attr_value):
     pred = pred.reshape(X.shape[0], X.shape[1], len(attr_value)) #HER IT NEED TO PASS len(attr_value)
     predlist = np.dsplit(pred, len(attr_value))
     return predlist #[pred]
-
+"""
+def get_callbacks():
+    return [
+        # ReduceLROnPlateau(monitor='loss', min_delta=0.0, patience=3, factor=0.1, min_lr=5e-6, verbose=1),
+        # EarlyStopping(monitor='loss', min_delta=0.001, patience=3, verbose=1, restore_best_weights=True)
+        EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
+    ]
+    
 class DataGenerator(utils.Sequence):
     'Generates data for Keras'
 
@@ -313,7 +315,6 @@ class DataGenerator(utils.Sequence):
         batch_y = self.y[idsamplesbatch]
         print("Generator output:", np.array(batch_X).shape, np.array(batch_y).shape)
         return np.array(batch_X), np.array(batch_y)
-
 
 def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize, extdataset):
     tf.random.set_seed(SEED)
@@ -571,3 +572,4 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
 
     else:
         print('Predict CNN - Unknown model')
+"""

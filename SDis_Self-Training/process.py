@@ -1,61 +1,29 @@
 import glob
 
-from config.definitions import (ROOT_DIR, ancillary_path, pop_path,
-                                gdal_rasterize_path, year)
-from evalResultsNL import eval_Results_ams
+from config.definitions import (ROOT_DIR, ancillary_path,  python_scripts_folder_path,
+                                pop_path, year)
+#from evalResultsDK import eval_Results_cph
+#from evalResultsNL import eval_Results_ams
 from mainFunctions.basic import createFolder
 from runDasymetricMapping import run_dasy
 from runDisaggregation import run_disaggregation
 from runPycnophylacticInterpolation import run_pycno
 from verifyMassPreserving import verifyMassPreserv
 
-#-------- GLOBAL ARGUMENTS --------
-city='ams'
-popraster = 'GHS_POP_100_near_cubicspline.tif'.format(city) 
-key = 'Buurtcode' #'BU_CODE'
-ancillary_path_case = ancillary_path +"{}".format(city)  
-
-#-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
-# If it is a list it will be calculated in multi-output model 
-# Total Population : 'totalpop',
-# 5 Age Groups : 'children', 'students','mobadults', 'nmobadults', 'elderly', 
-# 7 Migrant Groups : 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
-
-#'totalpop', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
-attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]   
-  
-#-------- SELECT PROCESS --------
-#1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
-run_Pycno = "no"
-run_Dasy = "yes"
-
-#2. TRAIN REGRESSION MODEL (FURTHER CHOICES NEED TO BE DEFINED BELOW)
-run_Disaggregation = "no"
-    # 2.1. SELECT METHOD/MODEL 
-        # aplm (linear model) 
-        # aprf (random forest) 
-        # apcatbr (Catboost Regressor)
-    # 2.2. SELECT DISAGGREGATED METHOD TO BE USED AS INPUT
-        # Pycno
-        # Dasy
-    # 2.3 SELECT ANCILLARY DATASET
-
-# 3. VERIFY MASS PRESERVATION
-verMassPreserv = "no"
-
-# 4. EVALUATE RESULTS
-run_EvaluationGC_ams = "no"
-
-def process_data(attr_value):
+def process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
+    ancillary_path_case = ancillary_path +"{}".format(city)
+    
     createFolder(ROOT_DIR + "/Temp/{}/".format(city))
     createFolder(ROOT_DIR + "/TempRaster/{}/".format(city))
     createFolder(ROOT_DIR + "/TempCSV/{}/".format(city))
+    
     if run_Pycno == "yes":
         createFolder(ROOT_DIR + "/Results/{}/Pycno/".format(city))
         ##### -------- PROCESS: RUN PYCNOPHYLACTIC -------- #####
         for i in attr_value:
             run_pycno(ROOT_DIR,ancillary_path, year, city, i, popraster, key)
     if run_Dasy == "yes":
+        print(attr_value)
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
         templateraster = '{}_template_100.tif'.format(city)
@@ -68,15 +36,16 @@ def process_data(attr_value):
             run_dasy(ancillary_path, year, city, attr_value, outputNameDasy, ROOT_DIR, popraster, key) 
     
     if run_Disaggregation == "yes":
+        print(methodopts, ymethodopts, inputDataset)
         ##### -------- PROCESS: TRAIN REGRESSION MODEL  -------- #####
-        methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
-        ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
-        cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
+        #methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
+        #ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
+        #cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
         # The ancillary datasets are defined in runDisaggregation
-        inputDataset = ['AIL1'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
-        iterMax = 2
+        #inputDataset = [ 'AIL1'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
+        #iterMax = 2
         for i in inputDataset:
-            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, gdal_rasterize_path)
+            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, city, year, attr_value, key, i, maxIters, python_scripts_folder_path)
     
     if verMassPreserv == "yes":
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
@@ -89,24 +58,28 @@ def process_data(attr_value):
                     evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it7*{1}.tif".format(ymethod,i,ymethod.lower(),city))
                     #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
                     csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
-                    #verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, i)
+                    verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, i)
             else:
-                
                 evalList = glob.glob(ROOT_DIR + "/Results/{0}/dissever00*{1}*.tif".format(ymethod,attr_value,ymethod.lower()))
                 print(evalList)
                 #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
                 csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,attr_value,ymethod)
-                #verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output,attr_value)
+                verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output,attr_value)
                 
-    if run_EvaluationGC_ams == "yes":
+    if run_Evaluation == "yes":
         pop_path_case = pop_path + "/{}/".format(city)
         if isinstance(attr_value, list):
             for i in attr_value:
                 print("Evaluation possible")
-                eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
+                if city == 'ams':
+                    print("Evaluation Not possible")
+                    #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
+                elif city == 'cph':
+                    print("Evaluation Not possible")
+                    #eval_Results_cph(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
         else:
             print("Evaluation Not possible")
             #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, attr_value)
     
     
-process_data(attr_value)
+#process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, iterMax, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation)

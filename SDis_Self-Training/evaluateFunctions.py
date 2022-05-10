@@ -33,8 +33,6 @@ def percentage_error(actual, predicted):
     quotient = round(np.nanmean(quotientArray),6)
     return round(quotient,2), quotientArray 
 
-
-
 def prop_error(actual, predicted):
     #predicted= np.nan_to_num(predicted, nan=0, posinf=999999, neginf= -999999)
     diff = actual - predicted

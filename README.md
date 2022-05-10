@@ -1,5 +1,16 @@
-# Spatial Disaggregation
-This repository contains the code for the spatial disaggregation of population data from various administrative levels 100m. grid cells.
+<!-- TABLE OF CONTENTS -->
+## Table of Contents
+
+* [About the Project](#about-the-project)
+* [Code Usage](#code-usage)
+* [Folder Structure](#folder-structure)
+* [License](#license)
+* [Contact](#contact)
+* [Citation](#citation)
+* [Acknowledgements](#acknowledgements)
+
+## Spatial Disaggregation
+This repository contains the code for the spatial disaggregation of population data from various administrative levels to 100m. grid cells.
 The followed methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost.
 
 You need to have the following:
@@ -9,11 +20,17 @@ You need to define them in runDisaggregation.py (raster format).
 3. A SDis_Self-Training/Shapefiles/ with the vector layer of the administrative units (shp).
 4. A SDis_Self-Training/Statistics/ folder with the aggregated counts respectively (csv).
 
-The main architecture was designed by João Monteiro.
-Further information can be found in '*Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosted Regression Trees*'
+<!-- Code Usage -->
+## Code Usage
+conda create -n 
+$ conda activate imla
+$ git clone ..
+$ cd 
 
-*Acknowledgements*
-This work has been supported by the European Union's Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu)
+$ git checkout 
+
+
+
 
 ## Population Data Preparation
 A file with the population dataset along with key field corresponding to the administrative unit should be included in a *Statistics* folder in csv format. A file with the administrative borders should be included in a *Shapefile* folder in shp format.
@@ -26,26 +43,14 @@ A *main* file controls the executed processes for each case study. In the *main*
 Additional parameters need to be defined for training the regression model, such as the type of the model, the desired training dataset, the input to be used, the number of iterations. 
 For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.   
 
-#### 1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
-```
-run_Pycno = "yes"
-# OR
-run_Dasy = "yes"
-```
-#### 2. TRAIN REGRESSION MODEL ()
-```
-run_Disaggregation = "yes"
-```
-##### FURTHER CHOICES NEED TO BE DEFINED, SUCH AS:
-##### 2.1. SELECT METHOD/MODEL      
-##### 2.2. SELECT DISAGGREGATED METHOD TO BE USED AS INPUT   
-##### 2.3. SELECT ANCILLARY DATASET
 
-#### 3. VERIFY MASS PRESERVATION
 ```
-verMassPreserv = "yes"
-```
-#### 4. EVALUATE RESULTS
-```
-run_EvaluationGC_ams = "yes"
-```
+<!-- Citation -->
+## Citation
+If you use this algorithm in your research or applications, please cite this source:
+M. Georgati, João Monteiro, Bruno Martins and Carsten Keßler [Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosted Regression Trees] 
+
+<!-- ACKNOWLEDGEMENTS -->
+## Acknowledgements
+The main architecture was designed by João Monteiro.
+This work has been supported by the European Union's Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu). The researchers from INESC-ID were partially funded by Funda\c{c}{\~a}o para a Ci{\^{e}}ncia e Tecnologia (FCT), through the MIMU project with reference PTDC/CCI-CIF/32607/2017, and also through the INESC-ID multi-annual funding from the PIDDAC program (UIDB/50021/2020).
