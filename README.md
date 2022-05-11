@@ -3,16 +3,15 @@
 
 * [About the Project](#about-the-project)
 * [Code Usage](#code-usage)
-* [Folder Structure](#folder-structure)
-* [License](#license)
 * [Contact](#contact)
 * [Citation](#citation)
 * [Acknowledgements](#acknowledgements)
 
+<!-- About the Project -->
 ## Spatial Disaggregation
 This repository contains the code for the spatial disaggregation of population data from various administrative levels to 100m. grid cells.
 The repository includes completed and on-going work.
-The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convlutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. 
+The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convlutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. Information about the CNN implementation will be given in the future.
 
 The following steps are required:
 1. An environment with the packages included in env.yml.
@@ -86,6 +85,10 @@ python main.py --attr_value children students mobadults nmobadults elderly sur a
 --run_Disaggregation yes --iterMax 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 \
 --verMassPreserv no --run_Evaluation no
 ```
+
+<!-- Contact -->
+## Contact
+Marina Georgati - marinag@plan.aau.dk
 
 <!-- Citation -->
 ## Citation
