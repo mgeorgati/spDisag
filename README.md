@@ -24,7 +24,7 @@ You need to define them in anciDt.py (raster format).
 ## Code Usage
 In order to reproduce the experiments for the multi-output Regression Trees with Random Forest and Gradient Boosting, please follow the next guidelines:
 ```
-$ git clone https://github.com/mgeorgati/spDisag \
+$ git clone https://github.com/mgeorgati/spDisag
 $ cd spDisag
 $ conda env create -f env.yml 
 $ conda activate spdisag_env
