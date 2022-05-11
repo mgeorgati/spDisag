@@ -54,7 +54,7 @@ attr_value=args.attr_value, city=args.city, popraster = args.popraster, key=args
 ```
 cd spDisag/SDis_Self-Training
 
-python main.py --attr_value=[demographic_groups] --city=[case_study_area] \
+python main.py --attr_value=[demographic_groups] --city=[case_study_area] --group_split=[group_split] \
 --popraster=[input_pop_layer] --key=[key] --run_Pycno=[run_Pycno] --run_Dasy=[run_Dasy] \
 --run_Disaggregation=[run_Disaggregation] \
 --maxIters=[maxIters] --methodopts=[methodopts] --ymethodopts=[ymethodopts] --inputDataset=[inputDataset] \
