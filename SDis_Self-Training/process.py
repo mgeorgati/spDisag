@@ -10,7 +10,7 @@ from runDisaggregation import run_disaggregation
 from runPycnophylacticInterpolation import run_pycno
 from verifyMassPreserving import verifyMassPreserv
 
-def process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
+def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
     ancillary_path_case = ancillary_path +"{}".format(city)
     
     createFolder(ROOT_DIR + "/Temp/{}/".format(city))
@@ -26,7 +26,6 @@ def process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disa
         print(attr_value)
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
-        templateraster = '{}_template_100.tif'.format(city)
         if isinstance(attr_value, list):
             for i in attr_value:
                 outputNameDasy = "/Results/{}/Dasy/".format(city) + str(year) + '_' + city + '_' + i + '_dasy.tif'
@@ -37,15 +36,8 @@ def process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disa
     
     if run_Disaggregation == "yes":
         print(methodopts, ymethodopts, inputDataset)
-        ##### -------- PROCESS: TRAIN REGRESSION MODEL  -------- #####
-        #methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
-        #ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
-        #cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
-        # The ancillary datasets are defined in runDisaggregation
-        #inputDataset = [ 'AIL1'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
-        #iterMax = 2
         for i in inputDataset:
-            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, city, year, attr_value, key, i, maxIters, python_scripts_folder_path)
+            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, city, year, attr_value, group_split, key, i, maxIters, python_scripts_folder_path)
     
     if verMassPreserv == "yes":
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
@@ -82,4 +74,3 @@ def process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disa
             #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, attr_value)
     
     
-#process_data(attr_value, city, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, iterMax, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation)

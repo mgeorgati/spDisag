@@ -12,23 +12,21 @@ import nputils as npu
 import osgeoutils as osgu
 import pycno
 
-def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
-                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, filters=[2,4,8,16,32],
-                lweights=[1/2, 1/2], extdataset=None, p=[1], min_iter=3, max_iter=100, converge=2,
-                hubervalue=0.5, stdivalue=0.01, dropout=0.5,
-                casestudy='pcounts', tempfileid=None, verbose=False):
+def runDissever(city, fshape, ancdatasets, attr_value, group_split, ROOT_DIR, min_iter=3, max_iter=100,
+                poly2agg = None, rastergeo=None, method='lm', p=[1], yraster=None, 
+                converge=2, casestudy='pcounts', tempfileid=None, verbose=False):
 
     print('| DISSEVER MULTIPLE VARIABLES')
     indicator = casestudy.split('_')[0]
     filenamemetrics2e = ROOT_DIR + '/TempCSV/{}/pcounts1_'.format(city) + casestudy + '_2e0.csv'
-
+    """
     if patchsize >= 16 and (cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg'):
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_wpadd_extended'
     elif patchsize >= 16:
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_nopadd_extended'
     else:
         cstudyad = None
-
+    """
     print("here is the 1st ancdatasets: ancillary:", ancdatasets.shape)
     nrowsds = ancdatasets[:,:,0].shape[1]
     ncolsds = ancdatasets[:,:,0].shape[0]
@@ -164,7 +162,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             #### <<<< ----- THIS CHANGED ----- >>>> ####
             disseverdatasetA = disseverdatasetA * dissmask
             
-            mod = caret.fitM(ancdatasets, disseverdatasetA, p, method, batchsize, lrate, epochspi, ROOT_DIR, casestudy,city) 
+            mod = caret.fitM(ancdatasets, disseverdatasetA, p, method, ROOT_DIR, casestudy, city, group_split) 
             
             print('| -- Predicting new values')
             predictedmaps = caret.predictM(mod, ancdatasets, attr_value)

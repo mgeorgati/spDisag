@@ -11,40 +11,82 @@
 
 ## Spatial Disaggregation
 This repository contains the code for the spatial disaggregation of population data from various administrative levels to 100m. grid cells.
-The followed methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost.
+The repository includes completed and on-going work.
+The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convlutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. 
 
-You need to have the following:
+The following steps are required:
 1. An environment with the packages included in env.yml.
 2. An AncillaryData folder with the desired ancillary data for each case study. GHS, CORINE LAND COVER, ESM etc are examples of ancillary data. 
-You need to define them in runDisaggregation.py (raster format).
+You need to define them in anciDt.py (raster format).
 3. A SDis_Self-Training/Shapefiles/ with the vector layer of the administrative units (shp).
 4. A SDis_Self-Training/Statistics/ folder with the aggregated counts respectively (csv).
 
 <!-- Code Usage -->
 ## Code Usage
-conda create -n 
-$ conda activate imla
-$ git clone ..
-$ cd 
+In order to reproduce the experiments for the multi-output Regression Trees with Random Forest and Gradient Boosting, please follow the next guidelines:
+$ git clone https://github.com/mgeorgati/spDisag
+$ cd spDisag
+$ conda env create -f env.yml 
+$ conda activate spdisag_env
+$ git checkout multi-output_RF_GB
 
-$ git checkout 
-
-
-
-
-## Population Data Preparation
+### Input Data Structure
+#### Population Data Preparation
 A file with the population dataset along with key field corresponding to the administrative unit should be included in a *Statistics* folder in csv format. A file with the administrative borders should be included in a *Shapefile* folder in shp format.
 
-## Ancillary Data Preparation
+#### Ancillary Data Preparation
 A folder with tha ancillary data should be stored in the parent folder. The GHS layer is essential to initiate the process. Topographic layers may include information about land uses, building features, etc.
 
-## Workflow
-A *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, nthe ame of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophilactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. 
+### Workflow
+The *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, the name of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophilactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. 
 Additional parameters need to be defined for training the regression model, such as the type of the model, the desired training dataset, the input to be used, the number of iterations. 
-For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.   
+For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.  
+
+### Execute Python Code 
+To perform the disaggregation method on your own dataset, please run the following code in python after you have collected the above mentioned datasets.
+
+Usage: 
+attr_value=args.attr_value, city=args.city, popraster = args.popraster, key=args.key, 
+            run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
+            inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation 
 
 
 ```
+cd spDisag/SDis_Self-Training
+
+python main.py --attr_value=[demographic_groups] --city=[case_study_area] \
+--popraster=[input_pop_layer] --key=[key] --run_Pycno=[run_Pycno] --run_Dasy=[run_Dasy] \
+--run_Disaggregation=[run_Disaggregation] \
+--maxIters=[maxIters] --methodopts=[methodopts] --ymethodopts=[ymethodopts] --inputDataset=[inputDataset] \
+--verMassPreserv=[verMassPreserv] --run_Evaluation=[run_Evaluation]
+```
+
+```
+--attr_value, 
+--city, 
+--group_split, 
+--popraster, 
+--key, 
+--run_Pycno, 
+--run_Dasy, 
+--run_Disaggregation, 
+--maxIters,
+--methodopts, 
+--ymethodopts, 
+--inputDataset, 
+--verMassPreserv, verMassPreserv
+--run_Evaluation, maximum iterations
+```
+
+Example:    
+Perform dasymetric mapping on Amsterdam data with 2 different population groups divided by age and region of origin.     
+```
+python main.py --attr_value children students mobadults nmobadults elderly sur ant mar tur nonwestern western autoch --city ams \
+--group_split 5 12 --popraster GHS_POP_100_near_cubicspline.tif --key Buurtcode --run_Pycno no --run_Dasy no \
+--run_Disaggregation yes --iterMax 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 \
+--verMassPreserv no --run_Evaluation no
+```
+
 <!-- Citation -->
 ## Citation
 If you use this algorithm in your research or applications, please cite this source:

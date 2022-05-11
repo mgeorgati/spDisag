@@ -55,7 +55,7 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
             ancdatasets = np.dstack((ancdataset2, ancdataset6, ancdataset13, ancdataset14, ancdataset15 ))
         
     if city == 'ams':
-        print(inputDataset)
+       
         ancdataset1, rastergeo = osgu.readRaster(os.path.join(ancillary_path, 'GHS', 'GHS_POP_100_near_cubicspline.tif'))
         ancdataset2 = osgu.readRaster(os.path.join(ancillary_path, 'ESM/{}_residential.tif'.format(city)))[0]
         ancdataset3 = osgu.readRaster(os.path.join(ancillary_path, 'corine/agric_{}_CLC_2012_2018.tif'.format(city)))[0]
