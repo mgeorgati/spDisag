@@ -62,20 +62,20 @@ python main.py --attr_value=[demographic_groups] --city=[case_study_area] \
 ```
 
 ```
---attr_value, 
---city, 
---group_split, 
---popraster, 
---key, 
---run_Pycno, 
---run_Dasy, 
---run_Disaggregation, 
---maxIters,
---methodopts, 
---ymethodopts, 
---inputDataset, 
---verMassPreserv, verMassPreserv
---run_Evaluation, maximum iterations
+--attr_value, the examined demographic groups
+--city, case study area
+--group_split, points to split the groups (not working yet)
+--popraster, population input layer
+--key, common key for csv and shp
+--run_Pycno, Run pycnophylactic Interpolation
+--run_Dasy, Run Dasymetric mapping
+--run_Disaggregation, Run Disaggregation
+--maxIters, maximum iterations
+--methodopts, disaggregation method
+--ymethodopts, input layers for disaggregation 
+--inputDataset, training dataset
+--verMassPreserv, Run mass preservation
+--run_Evaluation, Run Evaluation to ground truth
 ```
 
 Example:    
