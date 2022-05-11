@@ -1,4 +1,5 @@
 # Spatial Disaggregation
+(---Work in progress---)
 This repository contains the code for the spatial disaggregation of population data from various administrative levels 100m. grid cells.
 The followed methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost.
 
