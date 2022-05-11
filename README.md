@@ -23,12 +23,13 @@ You need to define them in anciDt.py (raster format).
 <!-- Code Usage -->
 ## Code Usage
 In order to reproduce the experiments for the multi-output Regression Trees with Random Forest and Gradient Boosting, please follow the next guidelines:
+```
 $ git clone https://github.com/mgeorgati/spDisag
 $ cd spDisag
 $ conda env create -f env.yml 
 $ conda activate spdisag_env
 $ git checkout multi-output_RF_GB
-
+```
 ### Input Data Structure
 #### Population Data Preparation
 A file with the population dataset along with key field corresponding to the administrative unit should be included in a *Statistics* folder in csv format. A file with the administrative borders should be included in a *Shapefile* folder in shp format.
