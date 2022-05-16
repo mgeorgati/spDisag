@@ -11,7 +11,7 @@
 ## Spatial Disaggregation
 This repository contains the code for the spatial disaggregation of population data from various administrative levels to 100m. grid cells.
 The repository includes completed and on-going work.
-The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convlutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. Information about the CNN implementation will be given in the future.
+The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convolutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. Information about the CNN implementation will be given in the future.
 
 The following steps are required:
 1. An environment with the packages included in env.yml.
@@ -38,7 +38,7 @@ A file with the population dataset along with key field corresponding to the adm
 A folder with tha ancillary data should be stored in the parent folder. The GHS layer is essential to initiate the process. Topographic layers may include information about land uses, building features, etc.
 
 ### Workflow
-The *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, the name of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophilactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. 
+The *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, the name of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophylactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. 
 Additional parameters need to be defined for training the regression model, such as the type of the model, the desired training dataset, the input to be used, the number of iterations. 
 For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.  
 
@@ -99,4 +99,4 @@ M. Georgati, João Monteiro, Bruno Martins and Carsten Keßler [Spatial Disaggre
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 The main architecture was designed by João Monteiro.
-This work has been supported by the European Union's Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu). The researchers from INESC-ID were partially funded by Funda\c{c}{\~a}o para a Ci{\^{e}}ncia e Tecnologia (FCT), through the MIMU project with reference PTDC/CCI-CIF/32607/2017, and also through the INESC-ID multi-annual funding from the PIDDAC program (UIDB/50021/2020).
+This work has been supported by the European Union's Horizon 2020 research and innovation programme under grant agreement No 870649, the project Future Migration Scenarios for Europe (FUME; https://futuremigration.eu). The researchers from INESC-ID were partially funded by funded by Fundação para a Ciência e Tecnologia (FCT), through the MIMU project with reference PTDC/CCI-CIF/32607/2017, and also through the INESC-ID multi-annual funding from the PIDDAC program (UIDB/50021/2020).
