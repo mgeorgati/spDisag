@@ -37,8 +37,8 @@ A file with the population dataset along with key field corresponding to the adm
 #### Ancillary Data Preparation
 A folder with tha ancillary data should be stored in the parent folder. The GHS layer is essential to initiate the process. Topographic layers may include information about land uses, building features, etc.
 Links for the ancillary data are provided here:
-    - [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
-    - [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
+- [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
+- [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
  
 You may find the following commands useful for clipping, processing and merging:
 
