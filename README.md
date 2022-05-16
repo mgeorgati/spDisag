@@ -45,7 +45,7 @@ You may find the following commands useful for clipping, processing and merging:
 
 ```
 gdal.Translate(output, input, projWin=bbox) 
-python gdal_calc.py -A inputA --A_band=1 --outfile=output.tif --calc="(A==255)
+python gdal_calc.py -A inputA --A_band=1 --outfile=output.tif --calc="(A==255)"
 python gdal_merge.py -o merged.tif -separate in1.tif in2.tif in3.tif
 ```
 
