@@ -36,6 +36,17 @@ A file with the population dataset along with key field corresponding to the adm
 
 #### Ancillary Data Preparation
 A folder with tha ancillary data should be stored in the parent folder. The GHS layer is essential to initiate the process. Topographic layers may include information about land uses, building features, etc.
+Links for the ancillary data are provided here:
+    - [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
+    - [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
+ 
+You may find the following commands useful for clipping, processing and merging:
+
+```
+gdal.Translate(output, input, projWin=bbox) 
+python gdal_calc.py -A inputA --A_band=1 --outfile=output.tif --calc="(A==255)
+python gdal_merge.py -o merged.tif -separate in1.tif in2.tif in3.tif
+```
 
 ### Workflow
 The *main* file controls the executed processes for each case study. In the *main* file, major variables should be defined based on the input population data and the desired process needs to be selected. The required variables are the following: the city name, the name of the GHS file, the common key between the population data and the administrative unit, the explored demographic groups. Firstly, at least one of the simple heuristic estimates are to be calculated by either performing the pycnophylactic interpolation or the dasymentric mapping. The execution of that produces the desired input for training the regression model. 
