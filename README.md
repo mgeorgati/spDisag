@@ -39,6 +39,7 @@ A folder with tha ancillary data should be stored in the parent folder. The GHS 
 Links for the ancillary data are provided here:
 - [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
 - [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
+- - [European Settlement Map](https://land.copernicus.eu/pan-european/GHSL/european-settlement-map)
  
 You may find the following commands useful for clipping, processing and merging:
 
