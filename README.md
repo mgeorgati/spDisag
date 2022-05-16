@@ -57,10 +57,6 @@ For each of the above outputs, it is suggested to verify the mass preservation, 
 To perform the disaggregation method on your own dataset, please run the following code in python after you have collected the above mentioned datasets.
 
 Usage: 
-attr_value=args.attr_value, city=args.city, popraster = args.popraster, key=args.key, 
-            run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
-            inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation 
-
 
 ```
 cd spDisag/SDis_Self-Training
