@@ -66,6 +66,18 @@ def shptoraster(raster_file, src_file, gdal_rasterize_path, dst_file, column_nam
 
 import geopandas as gpd    
 def dbTOraster(city, gdal_rasterize_path, engine, raster_file, temp_shp_path, temp_tif_path, column_name, layerName):
+    """_summary_
+
+    Args:
+        city (string): _description_
+        gdal_rasterize_path (_type_): _description_
+        engine (_type_): _description_
+        raster_file (_type_): _description_
+        temp_shp_path (_type_): _description_
+        temp_tif_path (_type_): _description_
+        column_name (_type_): _description_
+        layerName (_type_): _description_
+    """    
     # Create SQL Query
     sql = """SELECT id, "{0}", geometry FROM {1}_cover_analysis""".format(column_name, city)
     # Read the data with Geopandas

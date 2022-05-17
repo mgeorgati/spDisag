@@ -1,4 +1,4 @@
-import nputils as npu
+from utils import npu
 
 def rundasymmapping(idsdataset, polygonvaluesdataset, ancdataset, rastergeo, tempfileid=None):
     print('| DASYMETRIC MAPPING')

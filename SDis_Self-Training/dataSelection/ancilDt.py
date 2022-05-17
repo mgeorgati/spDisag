@@ -1,7 +1,8 @@
 import numpy as np, os
-import osgeoutils as osgu
+from utils import osgu
 
 def selectAncDt(city, year, inputDataset, ancillary_path):
+    print('in hre', city, ancillary_path)
     if city == 'cph':
         ancdataset1, rastergeo = osgu.readRaster(os.path.join(ancillary_path, 'GHS/GHS_POP_100_near_cubicsplineWaterIESM_new.tif'))
         ancdataset2 = osgu.readRaster(os.path.join(ancillary_path, 'ESM/{0}_residential.tif'.format(city)))[0]
@@ -116,5 +117,11 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
             ancdatasets = np.dstack((ancdataset2, ancdataset4A, ancdataset6, ancdataset7A, ancdataset8,ancdataset9A,ancdataset10A,ancdataset11A,ancdataset12A, ancdataset13B,  ancdataset14,  ancdataset15 ))
         elif inputDataset == 'AIL13':
             ancdatasets = np.dstack((ancdataset2, ancdataset4A, ancdataset5, ancdataset6, ancdataset7A, ancdataset8,ancdataset9A,ancdataset10A,ancdataset11A,ancdataset12A, ancdataset13B,  ancdataset14,  ancdataset15 ))
-       
+    """
+    print('----- Ancillary Data successfully defined -----')
+    with open('logs/ancData_list.txt', 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    with open('logs/ancData_list.txt', 'r') as f:
+        args.__dict__ = json.load(f)"""
     return ancdatasets, rastergeo

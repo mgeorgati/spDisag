@@ -1,7 +1,7 @@
 import geopandas as gpd
 import random, os
 import numpy as np
-from config.definitions import ROOT_DIR
+from config import ROOT_DIR
 
 def computeNeighbors(fshape, polyg = 'NUTSIII', verbose=False):
     adjpolygons = {}

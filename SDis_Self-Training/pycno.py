@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import ndimage
-import massp, osgeoutils as osgu, nputils as npu
 
+from utils import osgu, massp, npu
 #converge=0.001 <<< Change 
 def runPycno(ROOT_DIR, city, idsdataset, polygonvaluesdataset, rastergeo, attr_value, niter=100, converge=0.001, tempfileid=None):
     print('| PYCNOPHYLACTIC INTERPOLATION')

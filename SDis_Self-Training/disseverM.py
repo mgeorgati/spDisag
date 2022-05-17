@@ -3,14 +3,12 @@ import time
 import numpy as np
 import rasterio
 from sklearn import metrics
+from models import caret
 
-import caret
-import gputils as gput
 import metricsev as mev
-import neigPairs
-import nputils as npu
-import osgeoutils as osgu
-import kerasutils as ku
+
+from utils import osgu, npu, gput,  neigPairs
+from models import ku
 import pycno
 import matplotlib.pyplot as plt
 

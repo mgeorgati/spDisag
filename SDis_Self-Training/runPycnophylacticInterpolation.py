@@ -1,4 +1,4 @@
-import osgeoutils as osgu
+from utils import osgu
 import pycno
 
 

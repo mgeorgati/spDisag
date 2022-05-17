@@ -1,4 +1,4 @@
-import osgeoutils as osgu, nputils as npu
+from utils import osgu, npu
 import geopandas as gpd, numpy as np
 import os, collections
 from pathlib import Path

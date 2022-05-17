@@ -13,7 +13,6 @@ from verifyMassPreserving import verifyMassPreserv
 city='ams'
 popraster = 'GHS_POP_100_near_cubicsplineWaterIESM_new.tif'.format(city) 
 key = 'Buurtcode' #'BU_CODE'
-<<<<<<< HEAD
 ancillary_path_case = ancillary_path +"{}".format(city)     
   
 #-------- PROCESS: GHS RPREPARATION --------
@@ -22,9 +21,6 @@ run_Dasy = "no"
 run_Disaggregation = "yes"
 verMassPreserv = "yes"
 run_EvaluationGC_ams = "no"
-=======
-ancillary_path_case = ancillary_path +"{}".format(city)  
->>>>>>> 3b071db9f27693b7178ecc8fa2e8328ac2ab8de7
 
 #-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
 # If it is a list it will be calculated in multi-output model 
@@ -38,10 +34,10 @@ attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur'
 #-------- SELECT PROCESS --------
 #1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
 run_Pycno = "no"
-run_Dasy = "yes"
+run_Dasy = "no"
 
 #2. TRAIN REGRESSION MODEL (FURTHER CHOICES NEED TO BE DEFINED BELOW)
-run_Disaggregation = "no"
+run_Disaggregation = "yes"
     # 2.1. SELECT METHOD/MODEL 
         # aplm (linear model) 
         # aprf (random forest) 
@@ -70,7 +66,7 @@ def process_data(attr_value):
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
         templateraster = '{}_template_100.tif'.format(city)
-        if isinstance(attr_value):
+        if isinstance(attr_value,list):
             for i in attr_value:
                 outputNameDasy = "/Results/{}/Dasy/".format(city) + str(year) + '_' + city + '_' + i + '_dasy.tif'
                 run_dasy(ancillary_path, year, city, i, outputNameDasy, ROOT_DIR, popraster, key) 
@@ -80,19 +76,12 @@ def process_data(attr_value):
     
     if run_Disaggregation == "yes":
         ##### -------- PROCESS: TRAIN REGRESSION MODEL  -------- #####
-        methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
+        methodopts = ['apcnn'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
         ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
         cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
-<<<<<<< HEAD
-        #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
-        inputDataset = ['AIL12'] #TO 12 einai to kalo
-        # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
-        iterMax = 10
-=======
         # The ancillary datasets are defined in runDisaggregation
-        inputDataset = [ 'AIL1'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
+        inputDataset = [ 'AIL12'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
         iterMax = 2
->>>>>>> 3b071db9f27693b7178ecc8fa2e8328ac2ab8de7
         for i in inputDataset:
             run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, gdal_rasterize_path)
     

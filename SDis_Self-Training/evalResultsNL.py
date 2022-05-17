@@ -9,9 +9,9 @@ import rasterio
 import rasterio.mask
 from osgeo import gdal
 import glob 
-import osgeoutils as osgu
+
 from evaluateFunctions import (mae_error, rmse_error, mape_error, percentage_error)
-from gdalutils import maskRaster
+from utils import gdalutils, osgu
 from plotting.plotRaster import plot_map
 from plotting.plotVectors import plot_mapVectorPolygons
 

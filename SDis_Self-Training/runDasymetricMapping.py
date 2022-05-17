@@ -3,8 +3,8 @@ import os
 import numpy as np
 
 import dasymmapping as dm
-import osgeoutils as osgu
-
+#import osgeoutils as osgu
+from utils import osgu
 
 def run_dasy(ancillary_path, year, city, attr_value,outputNameDasy, ROOT_DIR, popraster, key):
     print('--- Running dasymetric mapping for the indicator', year, city, attr_value)

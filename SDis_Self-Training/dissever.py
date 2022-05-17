@@ -1,10 +1,11 @@
-import osgeoutils as osgu, nputils as npu, gputils as gput
-import kerasutils as ku
-import pycno, caret, neigPairs
+from utils import osgu, nputils, gput, neigPairs
+
+from models import ku, caret
+import pycno
 import numpy as np
 from sklearn import metrics
 import metricsev as mev
-import os, random
+import os
 
 def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
                 method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, filters=[2,4,8,16,32],

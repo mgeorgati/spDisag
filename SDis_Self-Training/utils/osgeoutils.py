@@ -3,7 +3,7 @@ warnings.simplefilter(action = "ignore", category = RuntimeWarning)
 from pathlib import Path
 from osgeo import ogr, gdal, osr
 import numpy as np
-import geopandas as gpd, pandas as pd, osgeoutils as osgu
+import geopandas as gpd, pandas as pd
 import os
 from config.definitions import ROOT_DIR
 

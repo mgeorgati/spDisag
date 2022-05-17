@@ -3,7 +3,7 @@ import os
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 parent_path = os.path.dirname(ROOT_DIR) 
 
-year=2018
+year = 2018
 ancillary_path = parent_path + '/AncillaryData/'
 pop_path = "C:/FUME/Dasymetric_Mapping/GroundTruth/"
 #path to folder with gdal executable files

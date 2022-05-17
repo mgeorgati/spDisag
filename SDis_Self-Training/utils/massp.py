@@ -1,5 +1,5 @@
 import numpy as np
-import osgeoutils as osgu
+from utils import osgu
 
 def runMassPreserving(idsdataset, polygonvaluesdataset, rastergeo, tempfileid=None):
     print('|| MASS-PRESERVING AREAL WEIGHTING')

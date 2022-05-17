@@ -2,7 +2,8 @@ import warnings
 warnings.simplefilter(action = "ignore", category = RuntimeWarning)
 import os
 from osgeo import gdal
-from osgeoutils import readRaster, addAttr2Shapefile
+from utils import osgu
+#from osgeoutils import readRaster, addAttr2Shapefile
 
 def progress_cb(complete, message, cb_data):
     '''Emit progress report in numbers for 10% intervals and dots for 3%'''
@@ -36,7 +37,7 @@ def shp2tifGDAL(template,city, fshape,  outputfile, xres, yres, attribute, burnV
     print('| Converting shapefile to raster:', fshape, '-', attribute)
 
     if attribute != 'ID':
-        addAttr2Shapefile(fshape, attr='ID')
+        osgu.addAttr2Shapefile(fshape, attr='ID')
 
     print('|| Converting...')
     data = gdal.Open(template)
@@ -51,7 +52,7 @@ def shp2tifGDAL(template,city, fshape,  outputfile, xres, yres, attribute, burnV
     rst_options = gdal.RasterizeOptions(outputBounds=bbox, attribute = attribute, outputSRS="EPSG:3035", xRes=xres, yRes=yres, burnValues = burnValues , targetAlignedPixels= True )
     gdal.Rasterize( outputfile, fshape, options= rst_options)
     
-    dataset, rastergeo = readRaster( outputfile)
+    dataset, rastergeo = osgu.readRaster( outputfile)
     return dataset, rastergeo
   
 import rasterio  
