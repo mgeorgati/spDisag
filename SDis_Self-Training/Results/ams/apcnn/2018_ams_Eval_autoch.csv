@@ -1,3 +1,0 @@
-Comparison among the predictions and the ground truth data for the Municipality of Amsterdam
-Method;MAE;RMSE;MAEMEAN;RMSEMEAN;PrE;PE;ActualSum;PredictedSum;ActualSTD;PredictedSTD
-ams_Dasy_16unet_10epochspi_AIL12_it10_autoch;0.45;7.0;0.0001;0.002;0.1248;0.0;393185.0;392969.9953460387;688.387;688.877

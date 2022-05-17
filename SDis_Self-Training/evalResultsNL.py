@@ -8,7 +8,7 @@ import numpy as np
 import rasterio
 import rasterio.mask
 from osgeo import gdal
-
+import glob 
 import osgeoutils as osgu
 from evaluateFunctions import (mae_error, rmse_error, mape_error, percentage_error)
 from gdalutils import maskRaster
@@ -64,20 +64,21 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
     
     ##### -------- Get files to be processed -------- #####
     print("----- Select prediction files to be evaluated -----") 
-    evalFiles = [ROOT_DIR + "/Results/{0}/apcnn/dissever01_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_A_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CL2018_ams_Dasy_16unet_huber1_stdi1_dropout0.5_10epochspi_3-ploop-t1_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CL12018_ams_Dasy_16unet_huber1_stdi1_dropout0.5_10epochspi_3-ploop-t1_{1}.tif".format(city,attr_value),
-                 #ROOT_DIR + "/Results/{0}/aprf/dissever01_100_2018_ams_DasyA_aprf_p[1]_12AIL12_13IL_it10_{1}.tif".format(city,attr_value),
+    evalFiles = [ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it3_{1}.tif".format(city,attr_value),
+                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF1_2018_ams_Dasy_16unet_10epochspi_AIL10_it10_{1}.tif".format(city,attr_value),
+                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
+                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_RMSE2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
+                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it2_{1}.tif".format(city,attr_value),
+                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
                  ROOT_DIR + "/Results/{0}/apcatbr/dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{1}.tif".format(city,attr_value)
                  ]
 
     print(evalFiles)
     print("----- {} files to be evaluated -----".format(len(evalFiles))) 
 
-    metrics2eMAE = evalPath + '/{}_MAE.csv'.format(city)
-    metrics2eRMSE = evalPath + '/{}_RMSE.csv'.format(city)
-    metrics2ePE = evalPath + '/{}_MAPE.csv'.format(city)
+    metrics2eMAE = evalPath + '/{}_MAE1.csv'.format(city)
+    metrics2eRMSE = evalPath + '/{}_RMSE1.csv'.format(city)
+    metrics2ePE = evalPath + '/{}_MAPE1.csv'.format(city)
     
 
     fileNames = []
@@ -132,6 +133,8 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
             src = rasterio.open(path)
             #plot_map(city,'popdistributionPred', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
         
+        os.remove(outputfile)
+        
         print("----- Step #2: Calculating Metrics -----")
         src_real = rasterio.open(outputGT)
         actual = src_real.read(1)
@@ -182,9 +185,6 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
         maskRaster(polyPath,outfileMAECL, outfileMAE)
         maskRaster(polyPath,outfileDivCL, outfileDiv)
         
-        os.remove(outfileMAECL)
-        os.remove(outfileDivCL)
-        
         # Write the difference and the quotient TIF files (gridcells) 
         print("----- Step #3A: Plotting Difference and quotient -----") 
         exportPath = outputPath + "/mae_{}_Grid.png".format(fileName)
@@ -200,6 +200,7 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
             LegendTitle = "Error (%)"
             src = rasterio.open(outfileDiv)
             plot_map(city,'pe', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+        
         
         """
         # Calculate the mean difference and the quotient by neighborhood 
@@ -315,4 +316,7 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
         #plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, '{}'.format(attr_value), districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
     
 
-
+    files_in_dir = glob.glob(outputPath + '/*.tif')
+    for _file in files_in_dir:
+        print(_file) # just to be sure, you know how it is...
+        os.remove(_file)

@@ -13,6 +13,7 @@ from verifyMassPreserving import verifyMassPreserv
 city='ams'
 popraster = 'GHS_POP_100_near_cubicsplineWaterIESM_new.tif'.format(city) 
 key = 'Buurtcode' #'BU_CODE'
+<<<<<<< HEAD
 ancillary_path_case = ancillary_path +"{}".format(city)     
   
 #-------- PROCESS: GHS RPREPARATION --------
@@ -21,6 +22,9 @@ run_Dasy = "no"
 run_Disaggregation = "yes"
 verMassPreserv = "yes"
 run_EvaluationGC_ams = "no"
+=======
+ancillary_path_case = ancillary_path +"{}".format(city)  
+>>>>>>> 3b071db9f27693b7178ecc8fa2e8328ac2ab8de7
 
 #-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
 # If it is a list it will be calculated in multi-output model 
@@ -28,9 +32,30 @@ run_EvaluationGC_ams = "no"
 # 5 Age Groups : 'children', 'students','mobadults', 'nmobadults', 'elderly', 
 # 7 Migrant Groups : 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
 
-#'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
-attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]
-#print(attr_value[0:5], attr_value[-7:])
+#'totalpop', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch'
+attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur', 'ant', 'mar','tur', 'nonwestern', 'western', 'autoch' ]   
+  
+#-------- SELECT PROCESS --------
+#1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
+run_Pycno = "no"
+run_Dasy = "yes"
+
+#2. TRAIN REGRESSION MODEL (FURTHER CHOICES NEED TO BE DEFINED BELOW)
+run_Disaggregation = "no"
+    # 2.1. SELECT METHOD/MODEL 
+        # aplm (linear model) 
+        # aprf (random forest) 
+        # apcatbr (Catboost Regressor)
+    # 2.2. SELECT DISAGGREGATED METHOD TO BE USED AS INPUT
+        # Pycno
+        # Dasy
+    # 2.3 SELECT ANCILLARY DATASET
+
+# 3. VERIFY MASS PRESERVATION
+verMassPreserv = "no"
+
+# 4. EVALUATE RESULTS
+run_EvaluationGC_ams = "no"
 
 def process_data(attr_value):
     createFolder(ROOT_DIR + "/Temp/{}/".format(city))
@@ -45,7 +70,7 @@ def process_data(attr_value):
         createFolder(ROOT_DIR + "/Results/{}/Dasy/".format(city))
         ##### -------- PROCESS: RUN DASYMETRIC  -------- #####
         templateraster = '{}_template_100.tif'.format(city)
-        if isinstance(attr_val):
+        if isinstance(attr_value):
             for i in attr_value:
                 outputNameDasy = "/Results/{}/Dasy/".format(city) + str(year) + '_' + city + '_' + i + '_dasy.tif'
                 run_dasy(ancillary_path, year, city, i, outputNameDasy, ROOT_DIR, popraster, key) 
@@ -54,13 +79,20 @@ def process_data(attr_value):
             run_dasy(ancillary_path, year, city, attr_value, outputNameDasy, ROOT_DIR, popraster, key) 
     
     if run_Disaggregation == "yes":
-        methodopts = ['apcnn'] # aplm (linear model), aprf (random forest), apxgbtree (XGBoost), apcnn (CNN), 'apcatbr' (Catboost Regressor), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
+        ##### -------- PROCESS: TRAIN REGRESSION MODEL  -------- #####
+        methodopts = ['aprf'] # aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor), apcnn (CNN), 'apmltr', 'aptfbtr' (Tensorflow BoostedTreesRegressor)
         ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
         cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
+<<<<<<< HEAD
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
         inputDataset = ['AIL12'] #TO 12 einai to kalo
         # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
         iterMax = 10
+=======
+        # The ancillary datasets are defined in runDisaggregation
+        inputDataset = [ 'AIL1'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
+        iterMax = 2
+>>>>>>> 3b071db9f27693b7178ecc8fa2e8328ac2ab8de7
         for i in inputDataset:
             run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, gdal_rasterize_path)
     
@@ -88,7 +120,7 @@ def process_data(attr_value):
         pop_path_case = pop_path + "/{}/".format(city)
         if isinstance(attr_value, list):
             for i in attr_value:
-                print("Evaluation Not possible")
+                print("Evaluation possible")
                 eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
         else:
             print("Evaluation Not possible")
