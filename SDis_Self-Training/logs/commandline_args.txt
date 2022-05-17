@@ -20,8 +20,8 @@
   ],
   "popraster": "GHS_POP_100_near_cubicspline.tif",
   "key": "Buurtcode",
-  "run_Pycno": "no",
-  "run_Dasy": "no",
+  "run_Pycno": "yes",
+  "run_Dasy": "yes",
   "run_Disaggregation": "yes",
   "maxIters": 2,
   "methodopts": [

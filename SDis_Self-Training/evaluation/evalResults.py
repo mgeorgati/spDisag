@@ -1,41 +1,38 @@
-from fileinput import filename
+import glob
 import os
-import sys
 from pathlib import Path
-import csv
+
 import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.mask
+from mainFunctions import createFolder, zonalStat
 from osgeo import gdal
-import glob 
-
-from evaluateFunctions import (mae_error, rmse_error, mape_error, percentage_error)
-from utils import gdalutils, osgu
 from plotting.plotRaster import plot_map
 from plotting.plotVectors import plot_mapVectorPolygons
+from utils import gdalutils, osgu
 
-print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from mainFunctions.basic import createFolder
+from evaluateFunctions import (div_error, mae_error, nmae_error, nrmse_error,
+                               percentage_error, prop_error, rmse_error)
 
 """
-    EVALUATION OF THE PREDICTIONS WITH THE GROUND TRUTH DATA OF OISg DATASET
+    EVALUATION OF THE PREDICTIONS WITH THE GROUND TRUTH DATA OF DSTg DATASET
 """
-def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
-    evalPath = ROOT_DIR + "/Evaluation/{}_20220323/".format(city)
-    
+def eval_Results_GC(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
+    evalPath = ROOT_DIR + "/Evaluation/{}/".format(city)
+
     # Required files
-    actualPath = pop_path + "/{0}/GridCells/rasters/{1}_{0}_{2}.tif".format(city, year, attr_value)
+    actualPath = ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
+    raster_file = ancillary_path + '/{0}_template/{0}_template_100.tif'.format(city)
     polyPath = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
-    districtPath = ancillary_path + '/adm/{0}_districts.geojson'.format(city)    
-    waterPath = ancillary_path + '/corine/waterComb_{0}_CLC_2012_2018.tif'.format(city)
+    districtPath = "K:/FUME/demo_popnet-Commit01/data_prep/cph_ProjectData/AncillaryData/CaseStudy/sogn.shp"
+    waterPath = ancillary_path + '/corine/waterComb_cph_CLC_2012_2018.tif'.format(city)
    
-    aggr_outfileSUMGT = ROOT_DIR + "/Shapefiles/Comb/{0}_ams_ois.geojson".format(year,city)
+    aggr_outfileSUMGT = ROOT_DIR + "/Shapefiles/Comb/{0}_{1}.geojson".format(year,city)
     ##### -------- PLOT Ground truth at Grid Cells -------- #####
     print("----- Plotting Population Distribution -----") 
-    
-    templatePathGA = ancillary_path + '/template/{0}_template_100.tif'.format(city)
+    print("----- Ground Truth for Copenhagen at Grid Cells -----") 
+    templatePathGA = raster_file
     #ds,rastergeo  = osgu.readRaster(actualPath)
     # Clip GT to extent of Municipality 
     data = gdal.Open(templatePathGA)
@@ -46,50 +43,62 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
     miny = maxy + geoTransform[5] * data.RasterYSize
     data = None
     bbox = (minx,maxy,maxx,miny)
-    #outputGTL =  ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
-    #if not os.path.exists(outputGTL):
-        #gdal.Translate(outputGTL, actualPath, projWin=bbox)
+    outputGTL =  ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
+    if not os.path.exists(outputGTL):
+        gdal.Translate(outputGTL, actualPath, projWin=bbox)
 
-    outputGT =  pop_path + "GridCells/rasters/{0}_{1}_{2}.tif".format(year,city,attr_value)
+    outputGT =  ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
     #if not os.path.exists(outputGT):
-        #maskRaster(polyPath, outputGTL, outputGT)
+        #gdalutils.maskRaster(polyPath, outputGTL, outputGT)
     
-    print("----- Ground Truth for Amsterdam at Grid Cells -----") 
-    exportPath = evalPath + "/GT/ams_GT_{1}.png".format(city,attr_value)
+    exportPath = evalPath + "/{0}_GT_{1}.png".format(city,attr_value)
     if not os.path.exists(exportPath):
         title ="Population Distribution (persons)\n(Ground Truth: {})(2018)".format(attr_value)
         LegendTitle = "Population (persons)"
         src = rasterio.open(outputGT)
-        #plot_map(city, 'popdistribution', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+        plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath = polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
     
     ##### -------- Get files to be processed -------- #####
-    print("----- Select prediction files to be evaluated -----") 
-    evalFiles = [ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it3_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF1_2018_ams_Dasy_16unet_10epochspi_AIL10_it10_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
-                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_RMSE2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
-                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it2_{1}.tif".format(city,attr_value),
-                 #ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
-                 ROOT_DIR + "/Results/{0}/apcatbr/dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{1}.tif".format(city,attr_value)
-                 ]
-
+    print("----- Get prediction files to be evaluated -----") 
+    # Get all spatial data for neighborhoods in list
+    evalFiles = []
+    # All files ending with .shp with depth of 2 folder
+    evalFiles1 = glob.glob(ROOT_DIR + "/Results/{0}/apcatbr/*{0}_*_{1}.tif".format(city,attr_value))
+    evalFiles2 = glob.glob(ROOT_DIR + "/Results/{0}/aprf/*{0}_*_{1}.tif".format(city,attr_value))
+    evalFiles3 = glob.glob(ROOT_DIR + "/Results/{0}/Dasy/*_{0}_{1}_dasyWIN.tif".format(city,attr_value))
+    evalFiles4 = glob.glob(ROOT_DIR + "/Results/{0}/Pycno/*_{0}_{1}_pycno.tif".format(city,attr_value))
+    evalFiles5 = glob.glob(ROOT_DIR + "/Results/{0}/GHS/*.tif".format(city))
+    evalFiles.extend(evalFiles1)
+    evalFiles.extend(evalFiles2)
+    evalFiles.extend(evalFiles3)
+    #evalFiles.extend(evalFiles4)
+    #evalFiles.extend(evalFiles5)
     print(evalFiles)
     print("----- {} files to be evaluated -----".format(len(evalFiles))) 
 
-    metrics2eMAE = evalPath + '/{}_MAE1.csv'.format(city)
-    metrics2eRMSE = evalPath + '/{}_RMSE1.csv'.format(city)
-    metrics2ePE = evalPath + '/{}_MAPE1.csv'.format(city)
     
+    ##### -------- PLOT PREDICTIONS for Greater Copenhagen at Grid Cells -------- #####
+    print("----- Plotting Population Distribution -----") 
+    print("----- ", len(evalFiles), "files for Greater Copenhagen at Grid Cells -----") 
+    evalPathGA = ROOT_DIR + "/Evaluation/{0}_groundTruth/".format(city)
+    for k in evalFiles:
+        path = Path(k)
+        name = path.stem 
+        exportPath = evalPathGA + "/{}.png".format(name)
+        if not os.path.exists(exportPath):
+            title ="Population Distribution (persons)\n({})(2018)".format(name)
+            LegendTitle = "Population (persons)"
+            src = rasterio.open(path)
+            plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath = polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
+    
+    filenamemetrics2e = evalPath + '/{0}_Evaluation_{1}.csv'.format(city, attr_value)
+    if os.path.exists(filenamemetrics2e):
+        os.remove(filenamemetrics2e)
 
-    fileNames = []
-    MAE_metrics = []
-    RMSE_metrics = []
-    MAPE_metrics = []
     ##### -------- Process Evaluation: Steps -------- #####
     print("----- Plotting Population Distribution -----") 
-    print("----- Ground Truth for Amsterdam at Grid Cells -----")      
-    for i in range(len(evalFiles)):
-        file = evalFiles[i]
+    print("----- Ground Truth for Copenhagen at Grid Cells -----")      
+    for file in evalFiles:
         path = Path(file)
         fileName = path.stem
         method = fileName.split("_",1)[1]
@@ -103,16 +112,13 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
             else:
                 outputPath = evalPath + "/aprf/dissever01"
                 createFolder(outputPath)
-        elif 'unet' in fileName:
-            outputPath = evalPath + "/apcnn"
-            createFolder(outputPath)
         elif 'apcatbr' in fileName:
             outputPath = evalPath + "/apcatbr"
             createFolder(outputPath)
         elif 'GHS' in fileName:
             outputPath = evalPath + "/GHS"
             createFolder(outputPath)
-        elif fileName.endswith('_dasyWIESMN'):
+        elif fileName.endswith('_dasyWIN'):
             outputPath = evalPath + "/Dasy"
             createFolder(outputPath)
         elif fileName.endswith('_pycno'):
@@ -121,19 +127,17 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
         else: 
             outputPath = evalPath
             
-        outputfile = outputPath + "/ams_{}.tif".format(fileName)
-        if not os.path.exists(outputfile):
-            maskRaster(polyPath, input, outputfile)
+        outputfile = outputPath + "/{0}_{1}.tif".format(city,fileName)
+        #if not os.path.exists(outputfile):
+           # gdalutils.maskRaster(polyPath, input, outputfile)
         # Plot the population distribution of the predictions 
-        exportPath = outputPath + "/ams_{}.png".format(fileName)
+        exportPath = outputPath + "/{0}_{1}.png".format(city,fileName)
         if not os.path.exists(exportPath):
             print("----- Step #1: Plotting Population Distribution -----")
             title ="Population Distribution (persons)\n({})(2018)".format(fileName)
             LegendTitle = "Population (persons)"
             src = rasterio.open(path)
-            #plot_map(city,'popdistributionPred', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
-        
-        os.remove(outputfile)
+            plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath =  polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
         
         print("----- Step #2: Calculating Metrics -----")
         src_real = rasterio.open(outputGT)
@@ -143,71 +147,82 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
         predicted = src_pred.read(1)
         predicted[(np.where((predicted <= -100000)))] = np.nan
         predicted = np.nan_to_num(predicted, nan=0) 
-        actSum = np.nansum(actual)
-        predSum =np.nansum(predicted)
+        actSum = round(np.nansum(actual),2)
+        predSum = round(np.nansum(predicted),2)
         
-        actMax = np.nanmax(actual)
-        predMax =np.nanmax(predicted)
+        actMax = round(np.nanmax(actual),2)
+        predMax = round(np.nanmax(predicted),2)
         
-        actMean = np.nanmean(actual)
-        predMean =np.nanmean(predicted)
+        actMean = round(np.nanmean(actual),2)
+        predMean = round(np.nanmean(predicted),2)
         # Read raster to get extent for writing the rasters later
         ds, rastergeo = osgu.readRaster(input)
 
-        r1, MAEdataset, std = mae_error(actual, predicted) 
-        r2 = rmse_error(actual, predicted)
-        r3 = mape_error(actual,predicted)
-        
-        #r6 = percentage_error(actual, predicted)[0]
-        DIVdataset = np.absolute(percentage_error(actual, predicted)[1])
-        DIVdataset[(np.where(DIVdataset == 100))] = 0
-                
+        r1, MAEdataset = mae_error(actual, predicted)
+        r2 = round(rmse_error(actual, predicted), 4)
+        r3 = round(nmae_error(actual, predicted), 4)
+        r4 = round(nrmse_error(actual, predicted), 4)
+
+        r5 = prop_error(actual, predicted)[0]
+        MAEdataset = prop_error(actual, predicted)[1]
+        r6 = div_error(actual, predicted)[0]
+        #DIVdataset = div_error(actual, predicted)[1]
+        r6 = percentage_error(actual, predicted)[0]
+        DIVdataset = percentage_error(actual, predicted)[1]
+
         stdActual = round(np.std(actual, dtype=np.float64),2)
         stdPred = round(np.std(predicted, dtype=np.float64),2)
         
-        fileNames.append(fileName)
-        print("{0}/±{1}".format(r1,std))
-        MAE_metrics.append("{0}/±{1}".format(r1,std))
-        RMSE_metrics.append(r2)
-        MAPE_metrics.append(r3)
-        print("----- Step #2: Writing CSV with Metrics -----") 
-        
+        print("----- Step #2: Writing CSV with Metrics -----")    
+        if os.path.exists(filenamemetrics2e):
+            with open(filenamemetrics2e, 'a') as myfile:
+                myfile.write(fileName + ';' + str(round(r1,3)) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(round(r5,2)) + ';' 
+                            + str(round(r6,2)) +';' + str(actSum) + ';' + str(predSum) +  ';' + str(actMax) + ';' + str(predMax) + ';' + str(round(actMean,2)) + ';' + str(round(predMean,2)) + ';' + str(stdActual) + ';' + str(stdPred) + '\n')       
+        else:
+            with open(filenamemetrics2e, 'w+') as myfile:
+                myfile.write('Comparison among the predictions and the ground truth data for the Municipality of Copenhagen\n')
+                myfile.write('Method;MAE;RMSE;MAEMEAN;RMSEMEAN;PrE;PE;ActualSum;PredictedSum;ActualMax;PredictedMax;ActualMean;PredictedMean;ActualSTD;PredictedSTD\n')
+                myfile.write(fileName + ';' + str(round(r1,3)) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(round(r5,2)) + ';' 
+                            + str(round(r6,2)) + ';' + str(actSum) + ';' + str(predSum) +  ';' + str(actMax) + ';' + str(predMax) + ';' + str(round(actMean,2)) + ';' + str(round(predMean,2)) + ';' + str(stdActual) + ';' + str(stdPred) + '\n')
+               
         # Write the difference and the quotient TIF files (gridcells) 
         print("----- Step #3: Writing TIF files with Difference and quotient -----") 
-        outfileMAECL = outputPath + "/mae_ams_{}CL.tif".format(fileName)
-        outfileDivCL = outputPath + "/div_ams_{}CL.tif".format(fileName)
+        #outfileMAECL = outputPath + "/mae_{0}_{1}CL.tif".format(city,fileName)
+        #outfileDivCL = outputPath + "/div_{0}_{1}CL.tif".format(city,fileName)
+        outfileMAE = outputPath + "/mae_{0}_{1}.tif".format(city,fileName)
+        outfileDiv = outputPath + "/div_{0}_{1}.tif".format(city,fileName)
+        osgu.writeRaster(MAEdataset[:,:], rastergeo, outfileMAE)
+        osgu.writeRaster(DIVdataset[:,:], rastergeo, outfileDiv)
         
-        osgu.writeRaster(MAEdataset[:,:], rastergeo, outfileMAECL)
-        osgu.writeRaster(DIVdataset[:,:], rastergeo, outfileDivCL)
         
-        outfileMAE = outputPath + "/mae_ams_{}.tif".format(fileName)
-        outfileDiv = outputPath + "/div_ams_{}.tif".format(fileName)
-        maskRaster(polyPath,outfileMAECL, outfileMAE)
-        maskRaster(polyPath,outfileDivCL, outfileDiv)
+        #gdalutils.maskRaster(polyPath,outfileMAECL, outfileMAE)
+        #gdalutils.maskRaster(polyPath,outfileDivCL, outfileDiv)
+        
+        #os.remove(outfileMAECL)
+        #os.remove(outfileDivCL)
         
         # Write the difference and the quotient TIF files (gridcells) 
         print("----- Step #3A: Plotting Difference and quotient -----") 
         exportPath = outputPath + "/mae_{}_Grid.png".format(fileName)
         if not os.path.exists(exportPath):
-            title ="Absolute Error (persons)\n({})(2018)".format(fileName)
+            title ="Mean Absolute Error by Neighborhood (persons)\n({})(2018)".format(fileName)
             LegendTitle = "Absolute Error (persons)"
             src = rasterio.open(outfileMAE)
-            #plot_map(city,'mae', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+            plot_map(city,'mae', src, exportPath, title, LegendTitle, districtPath =  polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
         
-        exportPath = outputPath + "/div_{}_Grid.png".format(fileName)
+        exportPath = outputPath + "/div007_{}_Grid.png".format(fileName)
         if not os.path.exists(exportPath):
-            title ="Absolute Percentage Error (%)\n({})(2018)".format(fileName)
+            title ="Percentage Error (%)\n({})(2018)".format(fileName)
             LegendTitle = "Error (%)"
             src = rasterio.open(outfileDiv)
-            plot_map(city,'pe', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
-        
+            plot_map(city,'div007', src, exportPath, title, LegendTitle, districtPath = polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
         
         """
         # Calculate the mean difference and the quotient by neighborhood 
         # Write Zonal Statistics file and csv
         print("----- Step #4: Calculating the mean difference and the quotient by neighborhood -----")
-        aggr_outfileMAE = outputPath + "/mae_ams_{}.geojson".format(fileName)
-        aggr_outfileDiv = outputPath + "/div_ams_{}.geojson".format(fileName)
+        aggr_outfileMAE = outputPath + "/mae_{0}_{1}.geojson".format(city,fileName)
+        aggr_outfileDiv = outputPath + "/div_{0}_{1}.geojson".format(city,fileName)
         statistics = "mean"
         print("----- Step #4A: Calculating ZSTAT (mean) -----")
         if not os.path.exists(aggr_outfileMAE):
@@ -237,7 +252,7 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
         # Calculate the sum of population by neighborhood 
         # Write Zonal Statistics file and csv
         print("----- Step #5: Calculating the sum of the population by neighborhood ZSTAT -----")
-        aggr_outfileSUM = outputPath+ "/ams_{}.geojson".format(fileName)
+        aggr_outfileSUM = outputPath+ "/{0}_{1}.geojson".format(city,fileName)
         statistics = "sum"
         print("----- Step #5A: Calculating ZSTAT (sum)-----")
         if not os.path.exists(aggr_outfileSUM):
@@ -269,54 +284,12 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
             LegendTitle = "Accuracy (%)"
             #plot_mapVectorPolygons(city,'div', frame, exportPath, title, LegendTitle, "prop_{}".format(attr_value), districtPath=districtPath, neighPath=polyPath, waterPath=waterPath, invertArea= None, addLabels=True)
         """
-    MAE_metrics.insert(0, attr_value)
-    RMSE_metrics.insert(0, attr_value)
-    MAPE_metrics.insert(0, attr_value)
-    fileNames.insert(0, "Model")
-    if os.path.exists(metrics2eMAE):
-        with open(metrics2eMAE, 'a', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(MAE_metrics) 
-    else:
-        with open(metrics2eMAE, 'w', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            
-            wr.writerow(['MAE for the Municipality of Amsterdam'])
-            wr.writerow(fileNames)
-            wr.writerow(MAE_metrics)
     
-    if os.path.exists(metrics2eRMSE):
-        with open(metrics2eRMSE, 'a', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(RMSE_metrics) 
-    else:
-        with open(metrics2eRMSE, 'w', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(['RMSE for the Municipality of Amsterdam'])
-            wr.writerow(fileNames)
-            wr.writerow(RMSE_metrics)
-    
-    if os.path.exists(metrics2ePE):
-        with open(metrics2ePE, 'a', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(MAPE_metrics) 
-    else:
-        with open(metrics2ePE, 'w', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            
-            wr.writerow(['MAPE for the Municipality of Amsterdam'])
-            wr.writerow(fileNames)
-            wr.writerow(MAPE_metrics)
     print("----- Step #6: Calculating and Plotting the total population by neighborhood for ground truth-----")   
     src = gpd.read_file(aggr_outfileSUMGT)   
     exportPath = evalPath + "{0}_{1}_{2}_Polyg.png".format(year,city,attr_value)
     if not os.path.exists(exportPath):
-        title ="Population Distribution (persons)\n(source:OIS, buurt)(2018)"
+        title ="Population Distribution (persons)\n(source:DST, Municipality)(2018)"
         LegendTitle = "Population (persons)"
-        #plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, '{}'.format(attr_value), districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+        plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, '{}'.format(attr_value), districtPath = polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
     
-
-    files_in_dir = glob.glob(outputPath + '/*.tif')
-    for _file in files_in_dir:
-        print(_file) # just to be sure, you know how it is...
-        os.remove(_file)

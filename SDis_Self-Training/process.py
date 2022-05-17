@@ -2,8 +2,8 @@ import glob
 
 from config import (ROOT_DIR, ancillary_path,  python_scripts_folder_path,
                                 pop_path, year)
-#from evalResultsDK import eval_Results_cph
-#from evalResultsNL import eval_Results_ams
+from evaluation import evalRsNL
+from evaluation import evalRsDK
 from mainFunctions import createFolder
 from runDasymetricMapping import run_dasy
 from runDisaggregation import run_disaggregation
@@ -73,12 +73,11 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
                 print("Evaluation possible")
                 if city == 'ams':
                     print("Evaluation Not possible")
-                    #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
+                    evalRsNL.eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
                 elif city == 'cph':
                     print("Evaluation Not possible")
-                    #eval_Results_cph(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
+                    evalRsDK.eval_Results_cph(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
         else:
             print("Evaluation Not possible")
-            #eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, attr_value)
     
     

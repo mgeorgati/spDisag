@@ -1,16 +1,14 @@
 import os
 import time
+
 import numpy as np
 import rasterio
+from evaluation import mev
+from models import caret, ku
 from sklearn import metrics
-from models import caret
+from utils import gput, neigPairs, npu, osgu
 
-import metricsev as mev
-
-from utils import osgu, npu, gput,  neigPairs
-from models import ku
-import pycno
-import matplotlib.pyplot as plt
+from processes import pycno
 
 
 def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,

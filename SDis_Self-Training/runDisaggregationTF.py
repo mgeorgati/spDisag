@@ -11,7 +11,7 @@ import random
 import numpy as np
 import tensorflow as tf
 
-import dissever
+from processes import dissever
 from dataSelection import selectAncDt
 from mainFunctions import createFolder
 #import disseverM 

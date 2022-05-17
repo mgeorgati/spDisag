@@ -7,10 +7,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import itertools, random
 from mainFunctions.basic import createFolder
-from pathlib import Path
 import numpy as np
-import dissever
-import disseverM 
+from processes import dissever
+from processes import disseverM 
 from utils import osgu
 from dataSelection import selectAncDt
 

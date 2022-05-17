@@ -2,7 +2,7 @@ from utils import osgu, npu
 import geopandas as gpd, numpy as np
 import os, collections
 from pathlib import Path
-from evaluateFunctions import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error, prop_error
+from evaluation import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error, prop_error
 
 def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value):
     """[Returns difference between predictions and ground truth data]
