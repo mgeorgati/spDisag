@@ -28,6 +28,16 @@ from mainFunctions.basic import createFolder
 
 SEED = 42
 
+def test_type(l):
+    if isinstance(l,list):
+        print("It is a list with length:", len(l))
+    elif isinstance(l,np.ndarray):
+        print("It is an array with shape:", l.shape)
+    elif tf.is_tensor(l):
+        print("It is a tensor of shape:", l.get_shape())
+    else:
+        raise Exception('wrong type')
+
 def fitlm(X, y):
     mod = LinearRegression()
     mod = mod.fit(X, y)
@@ -448,7 +458,8 @@ def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize
                     hislist = [cnnobj.fit(training_generator, epochs=epochs)] #This is history object storing info, e.g. for loss at each epoch
 
                     # hislist = [cnnobj.fit(Xfit, yfit, epochs=epochs, batch_size=batchsize, callbacks=get_callbacks())]
-                    print("???? hislist", hislist)
+                    print("???? hislist")
+                    test_type(hislist)
                     return hislist
 
         elif(cnnmod.startswith('2r')):
@@ -502,10 +513,11 @@ def predictloop(cnnmod, patches, batchsize):
         ctignore = np.isnan(patches[batch_start:batch_end])
         patchespred = patches[batch_start:batch_end].copy()
         patchespred[ctignore] = 0
-
-        y_pred_probs[batch_start:batch_end] = np.expand_dims(
-            np.mean(cnnmod.predict_on_batch(patchespred), axis=3), axis=3)
-
+        # WE'LL NEED TO ADJUST THAT IF WE INCLUDE THE FLIPPED IMAGES 
+        #y_pred_probs[batch_start:batch_end] = np.expand_dims(
+            #np.mean(cnnmod.predict_on_batch(patchespred), axis=3), axis=3)
+        y_pred_probs[batch_start:batch_end] = cnnmod.predict_on_batch(patchespred) #np.expand_dims(cnnmod.predict_on_batch(patchespred), axis=3) #cnnmod.predict_on_batch(patchespred)
+        
         # Replace original NANs with NAN
         patchespred[ctignore] = np.nan
 
@@ -550,17 +562,20 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
             else:
                 print('| --- Predicting new patches, 1 resolution U-Net')
                 predhr = predictloop(obj, ancpatches, batchsize=batchsize)
-                print(predhr.shape, ":predhr")
+                print("predhr_1")
+                test_type(predhr)
                 print('| ---- Reconstructing HR image from patches..')
-                predhr = ku.reconstructpatches(predhr, dissshape, stride)
-                # predhr = np.exp(predhr)-1
-                print(predhr.shape, ":predhr2")
-                predhrList = []
-                predhrList = channelSplit(predhr)
-                print(len(predhrList))
-                return predhrList
-                # # Including variance
-                # return [[predhr[0]], predhr[1]]
+                if len(predhr.shape) == 4:
+                    print("in the if")
+                    print(dissshape)
+                    aux = [ ku.reconstructpatches(predhr[:,:,:,a], (dissshape[0],dissshape[1]), stride) for a in range(predhr.shape[3]) ]
+                    test_type(aux)
+                    test_type(aux[0])
+                    print("AUX")
+                    test_type(np.moveaxis( np.array(aux), 0, 2))
+                    predlist = np.dsplit(np.moveaxis( np.array(aux), 0, 2), 12)
+                    test_type(predlist)
+                    return predlist
 
         elif mod.startswith('2r'):
             print('| --- Predicting new patches, 2 resolution U-Net')

@@ -7,7 +7,7 @@ from mainFunctions.basic import createFolder
 from runDasymetricMapping import run_dasy
 from runDisaggregation import run_disaggregation
 from runPycnophylacticInterpolation import run_pycno
-#from verifyMassPreserving import verifyMassPreserv
+from verifyMassPreserving import verifyMassPreserv
 
 #-------- GLOBAL ARGUMENTS --------
 city='ams'
@@ -19,7 +19,7 @@ ancillary_path_case = ancillary_path +"{}".format(city)
 run_Pycno = "no"
 run_Dasy = "no"
 run_Disaggregation = "yes"
-verMassPreserv = "no"
+verMassPreserv = "yes"
 run_EvaluationGC_ams = "no"
 
 #-------- SELECT DEMOGRAPHIC GROUP OR LIST OF GROUPS --------
@@ -58,8 +58,9 @@ def process_data(attr_value):
         ymethodopts = ['Dasy'] #'Pycno', Dasy# pycno, td, tdnoise10, td1pycno, average25p75td
         cnnmodelopts = ['unet'] # lenet, vgg, uenc, unet, 2runet (this and the following are only aplicable if method == CNN) 
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
-        inputDataset = [ 'AIL12'] # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
-        iterMax = 2
+        inputDataset = ['AIL12'] #TO 12 einai to kalo
+        # 'AIL0', 'AIL1', 'AIL2','AIL3', 'AIL4', 'AIL5','AIL6', 'AIL7', #'AIL5',
+        iterMax = 10
         for i in inputDataset:
             run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, key, i, iterMax, gdal_rasterize_path)
     
@@ -67,14 +68,14 @@ def process_data(attr_value):
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
         fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
         fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city) 
-        ymethodopts = ['aprf'] #'Dasy', 'Pycno', 'aprf'
+        ymethodopts = ['apcnn'] #'Dasy', 'Pycno', 'aprf'
         for ymethod in ymethodopts:
             if isinstance(attr_value, list):
                 for i in attr_value:
-                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it7*{1}.tif".format(ymethod,i,ymethod.lower(),city))
+                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_CLF1_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(ymethod,i,ymethod.lower(),city))
                     #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
-                    csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
-                    #verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, i)
+                    csv_output = ROOT_DIR + '/Results/{1}/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
+                    verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, i)
             else:
                 
                 evalList = glob.glob(ROOT_DIR + "/Results/{0}/dissever00*{1}*.tif".format(ymethod,attr_value,ymethod.lower()))

@@ -1,17 +1,17 @@
 import numpy as np, random
-from sklearn import metrics
 from sklearn.feature_extraction.image import extract_patches_2d
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
+from tensorflow.keras.losses import *
 from tensorflow.keras.backend import *
 from tensorflow.keras import optimizers
 from tensorflow.keras.initializers import *
 from tensorflow.keras import activations
 from itertools import product
-
+import itertools
 from tensorflow.keras import backend as K
 import tensorflow as tf
-
+from caret import test_type
 SEED = 42
 
 
@@ -19,35 +19,46 @@ def custom_activation(x):
     return K.elu(x)
 
 ####### THIS IS THE NEW CUSTOM LOSS FUNCTION FOR CNN
-def averageinst(y_pred, i):
-    y_pred[0] = tf.math.add(y_pred[0][:,:,:,i], y_pred[1][:,:,:,i])
-    y_pred[0] = tf.math.divide(y_pred[0], tf.cast(2, tf.float32))
-    return y_pred
-
 def averagepreds(y_pred):
     i = tf.constant(0)
     y_pred = tf.while_loop(tf.less(i, len(y_pred[0][-1])), averageinst(y_pred, i)) # Does this work?
     return y_pred[0]
 
-def custom_loss_fn(nsubgroups = [3, 2], nmodelpred = 2):
+def averageinst(y_pred):
+    y_pred[0] = tf.math.add(y_pred[0][:,:,:,:], y_pred[1][:,:,:,:])
+    y_pred[0] = tf.math.divide(y_pred[0], tf.cast(2, tf.float32))
+    return y_pred
+
+def custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False):
     def cl1(y_true, y_pred):
+        
+        # Condition doesn't work and finds issue in math.add
+        #y_pred_final = tf.cond(tf.math.equal(nmodelpred, 2), averageinst(y_pred), y_pred)
+        if nmodelpred == 2: y_pred_final = averageinst(y_pred)
+        else: y_pred_final = y_pred
+
         numfinite = tf.math.count_nonzero(tf.math.is_finite(y_true[:,:,:,0]))
-        mask = tf.where(tf.math.is_nan(y_true), K.constant(0), K.constant(1))
+        mask = tf.where(tf.math.is_nan(y_true), K.constant(0.0), K.constant(1.0))
         y_true = tf.math.multiply_no_nan(y_true, mask)
         y_pred = tf.math.multiply_no_nan(y_pred, mask)
-        y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
-
-        y_pred_final = tf.cond(nmodelpred == 2, averagepreds(y_pred), y_pred)
-
+        #y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
+        
         # Custom loss sub-groups
-        sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]])
-        sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]])
-        sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, nsubgroups[0]:nsubgroups[1]])
-        sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, nsubgroups[0]:nsubgroups[1]])
-        closssubgroups = tf.math.abs(sumtrueg1-sumpredg1) + tf.math.abs(sumtrueg2-sumpredg2)
+        sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+        print(sumtrueg1)
+        sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+        sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+        sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+        
+        loss1 = tf.keras.metrics.mean_absolute_error(sumtrueg1, sumpredg1)
+        loss2 = tf.keras.metrics.mean_absolute_error(sumtrueg2, sumpredg2)
+        loss3 = tf.keras.metrics.mean_squared_error(y_true, y_pred_final)
+        loss = loss1 + loss2 + loss3
 
-        closs = closssubgroups + mean_squared_error(y_true, y_pred_final)
-        return tf.math.divide_no_nan(closs, tf.cast(numfinite, tf.float32))
+        # The function tf.keras.metrics.mean_squared_error produced a result with shape = [batch_size, d0, .. dN-1].
+        # Do you want that behaviour? Ou do you want to reduce already here the loss function to a single value?
+        if reduce: loss = tf.math.divide_no_nan( tf.math.reduce_sum(loss) , tf.cast(numfinite, tf.float32) )
+        return loss
     return cl1
 #######
 
@@ -58,7 +69,7 @@ def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
         y_true = tf.math.multiply_no_nan(y_true, mask)
         y_pred = tf.math.multiply_no_nan(y_pred, mask)
         y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
-
+        
         # # Huber Loss
         # HUBER_DELTA = hubervalue
         # x = K.abs(y_true - y_pred)
@@ -77,9 +88,10 @@ def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
         # # RMSE
         rmse = K.sqrt(K.mean(K.square(y_pred - y_true)))
         # rmse = K.sqrt(K.mean(K.square(y_pred - y_true))) + 10000*1/(1+K.std(y_pred))
+        print("shape of sl1 in RMSE:", tf.shape(tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32))))
+        print("sl1 in RMSE:", tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32)))
         return tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32))
     return sl1
-
 
 def smoothLC1(hubervalue = 0.5, stdivalue = 0.01):
     def sl1(y_true, y_pred):
@@ -97,135 +109,175 @@ def smoothLC1(hubervalue = 0.5, stdivalue = 0.01):
         x2 = K.abs(y_pred[:, :, :, 0] - y_pred[:, :, :, 1])
         x2 = tf.where(x2 < HUBER_DELTA, 0.5 * x2 ** 2, HUBER_DELTA * (x2 - 0.5 * HUBER_DELTA))
         sl = K.sum(x1) + K.sum(x2) + (10000*1/(1+tf.keras.backend.std(y_pred_avg_two_channels)))
-
+        
         return tf.math.divide_no_nan(sl, tf.cast(numfinite, tf.float32))
     return sl1
 
 
 def unet(inputs, filters=[2,4,8,16,32], dropout=0.5):
+    print("UNET-----------")
+    test_type(inputs)
     conv1 = Conv2D(filters[0], 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
     # conv1 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(inputs)  # ALTERADO
     # conv1 = BatchNormalization()(conv1)  # ALTERADO
     # conv1 = Activation('relu')(conv1)  # ALTERADO
-
+    print("UNET1-----------")
+    test_type(conv1)
     conv1 = Conv2D(filters[0], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
     # conv1 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv1)  # ALTERADO
     # conv1 = BatchNormalization()(conv1)  # ALTERADO
     # conv1 = Activation('relu')(conv1)  # ALTERADO
-
+    print("UNET1-1----------")
+    test_type(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
 
     conv2 = Conv2D(filters[1], 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
     # conv2 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(pool1)  # ALTERADO
     # conv2 = BatchNormalization()(conv2)  # ALTERADO
     # conv2 = Activation('relu')(conv2)  # ALTERADO
-
+    print("UNET2-----------")
+    test_type(conv2)
     conv2 = Conv2D(filters[1], 3, activation='relu', padding='same', kernel_initializer ='he_normal')(conv2)
     # conv2 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv2)  # ALTERADO
     # conv2 = BatchNormalization()(conv2)  # ALTERADO
     # conv2 = Activation('relu')(conv2)  # ALTERADO
-
+    print("UNET2-2----------")
+    test_type(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
 
     conv3 = Conv2D(filters[2], 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool2)
     # conv3 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(pool2)  # ALTERADO
     # conv3 = BatchNormalization()(conv3)  # ALTERADO
     # conv3 = Activation('relu')(conv3)  # ALTERADO
-
+    print("UNET3-----------")
+    test_type(conv3)
     conv3 = Conv2D(filters[2], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv3)
     # conv3 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv3)  # ALTERADO
     # conv3 = BatchNormalization()(conv3)  # ALTERADO
     # conv3 = Activation('relu')(conv3)  # ALTERADO
-
+    print("UNET3-3----------")
+    test_type(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
-
+    print("UNET_pool3-----------")
+    test_type(pool3)
     conv4 = Conv2D(filters[3], 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool3)
     # conv4 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(pool3)  # ALTERADO
     # conv4 = BatchNormalization()(conv4)  # ALTERADO
     # conv4 = Activation('relu')(conv4)  # ALTERADO
-
+    print("UNET4-----------")
+    test_type(conv4)
     conv4 = Conv2D(filters[3], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv4)
     # conv4 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv4)  # ALTERADO
     # conv4 = BatchNormalization()(conv4)  # ALTERADO
     # conv4 = Activation('relu')(conv4)  # ALTERADO
-
+    print("UNET4-4----------")
+    test_type(conv4)
     drop4 = Dropout(dropout)(conv4)
+    print("UNET drop4----------")
+    test_type(drop4)
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
-
+    print("POOL4----------")
+    test_type(pool4)
     conv5 = Conv2D(filters[4], 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool4)
     # conv5 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(pool4)  # ALTERADO
     # conv5 = BatchNormalization()(conv5)  # ALTERADO
     # conv5 = Activation('relu')(conv5)  # ALTERADO
-
+    print("UNET5-----------")
+    test_type(conv5)
     conv5 = Conv2D(filters[4], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
     # conv5 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv5)  # ALTERADO
     # conv5 = BatchNormalization()(conv5)  # ALTERADO
     # conv5 = Activation('relu')(conv5)  # ALTERADO
-
+    print("UNET5-5----------")
+    test_type(conv5)
     drop5 = Dropout(dropout)(conv5)
-
+    print("UNET-drop5----------")
+    test_type(drop5)
     up6 = Conv2D(filters[3], 2, activation='relu', padding='same', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(drop5))
+    print("Up6----------")
+    test_type(up6)
     merge6 = concatenate([drop4, up6], axis=3)
-
+    print("merge6----------")
+    test_type(merge6)
     conv6 = Conv2D(filters[3], 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge6)
     # conv6 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(merge6)  # ALTERADO
     # conv6 = BatchNormalization()(conv6)  # ALTERADO
     # conv6 = Activation('relu')(conv6)  # ALTERADO
-
+    print("UNET6----------")
+    test_type(conv6)
     conv6 = Conv2D(filters[3], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
     # conv6 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv6)  # ALTERADO
     # conv6 = BatchNormalization()(conv6)  # ALTERADO
     # conv6 = Activation('relu')(conv6)  # ALTERADO
-
+    print("UNET6----------")
+    test_type(conv6)
     up7 = Conv2D(filters[2], 2, activation='relu', padding='same', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(conv6))
+    print("Up7----------")
+    test_type(up7)
     merge7 = concatenate([conv3, up7], axis=3)
+    print("merge7----------")
+    test_type(merge7)
 
     conv7 = Conv2D(filters[2], 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge7)
     # conv7 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(merge7)  # ALTERADO
     # conv7 = BatchNormalization()(conv7)  # ALTERADO
     # conv7 = Activation('relu')(conv7)  # ALTERADO
-
+    print("UNET7----------")
+    test_type(conv7)
     conv7 = Conv2D(filters[2], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
     # conv7 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv7)  # ALTERADO
     # conv7 = BatchNormalization()(conv7)  # ALTERADO
     # conv7 = Activation('relu')(conv7)  # ALTERADO
-
+    print("UNET7-7----------")
+    test_type(conv7)
     up8 = Conv2D(filters[1], 2, activation='relu', padding='same', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(conv7))
+    print("up8----------")
+    test_type(up8)
     merge8 = concatenate([conv2, up8], axis=3)
-
+    print("merge8----------")
+    test_type(merge8)
     conv8 = Conv2D(filters[1], 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge8)
     # conv8 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(merge8)  # ALTERADO
     # conv8 = BatchNormalization()(conv8)  # ALTERADO
     # conv8 = Activation('relu')(conv8)  # ALTERADO
-
+    print("conv8----------")
+    test_type(conv8)
     conv8 = Conv2D(filters[1], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
     # conv8 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv8)  # ALTERADO
     # conv8 = BatchNormalization()(conv8)  # ALTERADO
     # conv8 = Activation('relu')(conv8)  # ALTERADO
-
+    print("UNET8-8----------")
+    test_type(conv8)
     up9 = Conv2D(filters[0], 2, activation='relu', padding='same', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(conv8))
+    print("up9----------")
+    test_type(up9)
     merge9 = concatenate([conv1, up9], axis=3)
-
+    print("merge9----------")
+    test_type(merge9)
     conv9 = Conv2D(filters[0], 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
     # conv9 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(merge9)  # ALTERADO
     # conv9 = BatchNormalization()(conv9)  # ALTERADO
     # conv9 = Activation('relu')(conv9)  # ALTERADO
-
+    print("UNET9----------")
+    test_type(conv9)
     conv9 = Conv2D(filters[0], 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     # conv9 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(conv9)  # ALTERADO
     # conv9 = BatchNormalization()(conv9)  # ALTERADO
     # conv9 = Activation('relu')(conv9)  # ALTERADO
-    
+    print("UNET9-9----------")
+    test_type(conv9)
     # New
     aux = concatenate([conv9, inputs], axis=3)
     # aux = conv9
     print("in UNET: conv9", conv9.shape, "aux:", aux.shape)
     output = Conv2D(12, 1, activation='linear')(aux) # CHANGED: Conv2D(1, 1, activation='linear')(aux)
     print("output of unet:", output.shape)
+    print("output----------")
+    test_type(output)
     return output
 
 
@@ -340,13 +392,19 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         #                      exclusive=True)
 
         result = unet(inputs, filters, dropout)
-        resultModified = [result[:, :, :, 0:5], result[:, :, :, -7:]]
-        print("EDO", len(resultModified), resultModified[0].shape)
+        # THIS ID FOR CONCATENATING THE FLIPPING IMAGES
         # result = Concatenate()([processed_a, processed_b])
         mod = Model(inputs=inputs, outputs=result)
-        print("MOD", mod)
-        #sl1 = custom_loss_fn(nsubgroups = [5, 7], nmodelpred = 1)
-        sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+        
+        # CUSTOM LOSS
+        sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False)
+        
+        # RMSE
+        #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+        
+        # HUBER LOSS
+        #sl1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
+        
         mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
 
         # Version 2, c)
@@ -409,8 +467,6 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
 
     return mod
 
-
-
 def createpatches(X, city, ROOT_DIR, patchsize, padding, stride=1, cstudy=None):
     if cstudy:
         try:
@@ -450,7 +506,30 @@ def createpatches(X, city, ROOT_DIR, patchsize, padding, stride=1, cstudy=None):
         print("patches in ku:", patches.shape)
         return patches
 
+def reconstructpatches(patches, image_size, stride):    
+    print('patches:',patches.shape)
+    i_h, i_w = image_size[:2]
+    p_h, p_w = patches.shape[1:3]
+    mean = np.zeros(image_size)
+    patch_count = np.zeros(image_size)
+    print(patch_count.shape, mean.shape)
+    n_h = int((i_h - p_h) / stride + 1)
+    n_w = int((i_w - p_w) / stride + 1)
+
+    for p, (i, j) in zip(patches, itertools.product(range(n_h), range(n_w))):
+        patch_count[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += ~np.isnan(p)
+        ctignore = np.isnan(p)
+        p[ctignore] = 0
+        mean[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += p
+        p[ctignore] = np.nan
+    mean = np.divide(mean, patch_count, out=np.zeros_like(mean), where=patch_count != 0)
+    test_type(mean)
+    return mean
+
+"""
+#This is the old reconstructPatches Function
 def reconstructpatches(patches, image_size, stride):
+    print("in Reconstruct:", patches.shape, image_size)
     i_h, i_w = image_size[:2]
     p_h, p_w = patches.shape[1:3]
     mean = np.zeros(image_size)
@@ -476,3 +555,4 @@ def reconstructpatches(patches, image_size, stride):
     print("mean in Reconstructs:", mean.shape)
     return mean
     # return [mean, variance]
+"""

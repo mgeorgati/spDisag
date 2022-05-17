@@ -34,7 +34,7 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
     psamplesopts = [[1]] # [0.0625], [[0.0625], [0.03125]], [[0.03125, 0.0625]]]
     epochspiopts = [10]
     batchsizeopts = [64] # 256, 1024ß
-    learningrateopts = [0.1] # 0.0, 0.001, census-0.0001 #changed from 0.001
+    learningrateopts = [0.001] # 0.0, 0.001, census-0.0001 #changed from 0.001
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]
     perc2evaluateopts = [1]
@@ -273,9 +273,11 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                             tf.config.experimental.set_memory_growth(gpu_instance, True)
 
                         yraster = outfile
-                        casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
-                                    '_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
-                                    '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
+                        casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + \
+                                    '_' + str(epochpi) + 'epochspi' + '_AIL' + str(ancdts.shape[2]) + '_it' + str(iterMax)
+                        #casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
+                                    #'_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
+                                    #'_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
                         dissdatasetList = disseverM.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, min_iter=3, max_iter=iterMax,
                                                                     perc2evaluate=perc2evaluate,
                                                                     poly2agg=key,
@@ -294,7 +296,7 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                             val = attr_value[i]
                             #print(dissdataset.shape, np.nanmax(dissdataset))
                             print('- Writing raster to disk...')
-                            osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CL1' + casestudy + '_' + val + '.tif')
+                            osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF1_' + casestudy + '_' + val + '.tif')
         # ______________________
         # if input is not a list
         else: 

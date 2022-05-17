@@ -2,9 +2,9 @@ import osgeoutils as osgu, nputils as npu
 import geopandas as gpd, numpy as np
 import os, collections
 from pathlib import Path
-from evaluateFunctions import rmse_error, mae_error, nrmse_error ,nmae_error, div_error, prop_error
+from evaluateFunctions import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error, prop_error
 
-def verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, attr_value):
+def verifyMassPreserv(fshapea,city, fcsv, key, evalList, csv_output, attr_value):
     """[Returns difference between predictions and ground truth data]
     ##### ----- MODIFY CSV FOR EACH CASE ----- #####
 
@@ -15,7 +15,7 @@ def verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, attr_value):
         evalList ([list]): [list of directories to file to be evaluated]
         ROOT_DIR ([str]): [parent directory]
     """
-    fshape = osgu.copyShape(fshapea, 'verifymass')
+    fshape = osgu.copyShape(fshapea, 'verifymass',city)
     osgu.addAttr2Shapefile(fshape, fcsv, [key], encoding='utf-8')
 
     for i in evalList:
@@ -26,8 +26,8 @@ def verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, attr_value):
         nrowsds = raster.shape[1]
         ncolsds = raster.shape[0]
 
-        idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds])[0]
-        polygonvaluesdataset = osgu.ogr2raster(fshape, attr=attr_value, template=[rastergeo, nrowsds, ncolsds])[0]
+        idsdataset = osgu.ogr2raster(fshape, attr='ID', template=[rastergeo, nrowsds, ncolsds], city=city)[0]
+        polygonvaluesdataset = osgu.ogr2raster(fshape, attr=attr_value, template=[rastergeo, nrowsds, ncolsds],city=city)[0]
 
         # Summarizes the values within each polygon
         stats_predicted = npu.statsByID(raster, idsdataset, 'sum')
@@ -52,7 +52,7 @@ def verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, attr_value):
             r3 = round(nmae_error(true, predicted), 4)
             r4 = round(nrmse_error(true, predicted), 4)
             r5 = prop_error(true, predicted)[0]
-            r6 = div_error(true, predicted)[0]
+            r6 = mape_error(true, predicted)
             
             stdtrue = round(np.std(true, dtype=np.float64),3)
             stdPred = round(np.std(predicted, dtype=np.float64),3)
@@ -71,6 +71,6 @@ def verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, attr_value):
                                 + str(r6) + ';' + str(actSum) + ';' + str(predSum) + ';' + str(stdtrue) + ';' + str(stdPred) + '\n')
         else:
             print("----- ALL GOOD FOR {} -----\n YOU MAY PROCEED WITH THE ANALYSIS!".format(attr_value))    
-    osgu.removeShape(fshape)
+    osgu.removeShape(fshape,city)
 
 
