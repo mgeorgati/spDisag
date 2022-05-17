@@ -9,6 +9,7 @@ from tensorflow.keras.initializers import *
 from tensorflow.keras import activations
 
 from itertools import product
+#from models import rbs
 import itertools
 from tensorflow.keras import backend as K
 import tensorflow as tf
@@ -360,6 +361,9 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         # CUSTOM LOSS
         sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False)
         
+        # Robust Loss Function
+        #sl1 = rbs.CustomLossFunction(width, length, targets)
+        #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
         # RMSE
         #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
         

@@ -33,6 +33,6 @@
   "inputDataset": [
     "AIL12"
   ],
-  "verMassPreserv": "no",
+  "verMassPreserv": "yes",
   "run_Evaluation": "no"
 }

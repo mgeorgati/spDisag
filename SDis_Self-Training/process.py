@@ -51,14 +51,14 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
         fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
         fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city) 
-        ymethodopts = ['aprf'] #'Dasy', 'Pycno', 'aprf'
+        ymethodopts = ['apcnn'] #'Dasy', 'Pycno', 'aprf'
         for ymethod in ymethodopts:
             if isinstance(attr_value, list):
                 for i in attr_value:
-                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it7*{1}.tif".format(ymethod,i,ymethod.lower(),city))
+                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it2*{1}.tif".format(ymethod,i,ymethod.lower(),city))
                     #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
-                    csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
-                    verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, i)
+                    csv_output = ROOT_DIR + '/Results/{1}/{3}/{0}_Eval_{2}.csv'.format(year,city,i,ymethod)
+                    verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, i)
             else:
                 evalList = glob.glob(ROOT_DIR + "/Results/{0}/dissever00*{1}*.tif".format(ymethod,attr_value,ymethod.lower()))
                 print(evalList)

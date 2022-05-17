@@ -4,7 +4,7 @@ import os, collections
 from pathlib import Path
 from evaluateFunctions import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error, prop_error
 
-def verifyMassPreserv(fshapea,city, fcsv, key, evalList, csv_output, attr_value):
+def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value):
     """[Returns difference between predictions and ground truth data]
     ##### ----- MODIFY CSV FOR EACH CASE ----- #####
 

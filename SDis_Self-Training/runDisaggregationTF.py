@@ -187,7 +187,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         val = attr_value[i]
                         #print(dissdataset.shape, np.nanmax(dissdataset))
                         print('- Writing raster to disk...')
-                        osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF1_' + casestudy + '_' + val + '.tif')
+                        osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF_' + casestudy + '_' + val + '.tif')
     # ______________________
         # if input is not a list
         else: 
