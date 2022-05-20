@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from evaluation import mev
+from evaluating import mev
 from models import caret, ku
 from sklearn import metrics
 from utils import gput, neigPairs, npu, osgu

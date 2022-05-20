@@ -9,12 +9,11 @@
 
 <!-- About the Project -->
 ## Spatial Disaggregation
-This repository contains the code for the spatial disaggregation of population data from various administrative levels to 100m. grid cells.
-The repository includes completed and on-going work.
-The considered methods are : single- and multi- output Random Forests and Gradient Boosting with Catboost and multi-output Convolutional Neural Networks with Tensorflow. So far, it is possible to use the tool and reproduce the study by implementing the multi-output Random Forests and Gradient Boosting following the guidelines below. Information about the CNN implementation will be given in the future.
+This branch contains on-going work and it might not work.
+The considered method is a multi-output Convolutional Neural Networks with Tensorflow. 
 
 The following steps are required:
-1. An environment with the packages included in env.yml.
+1. An environment with the packages included in envTF.yml.
 2. An AncillaryData folder with the desired ancillary data for each case study. GHS, CORINE LAND COVER, ESM etc are examples of ancillary data. 
 You need to define them in anciDt.py (raster format).
 3. A SDis_Self-Training/Shapefiles/ with the vector layer of the administrative units (shp).
@@ -22,13 +21,13 @@ You need to define them in anciDt.py (raster format).
 
 <!-- Code Usage -->
 ## Code Usage
-In order to reproduce the experiments for the multi-output Regression Trees with Random Forest and Gradient Boosting, please follow the next guidelines:
+In order to reproduce the experiments for the multi-output CNN with UNET, please follow the next guidelines:
 ```
 $ git clone https://github.com/mgeorgati/spDisag
 $ cd spDisag
-$ conda env create -f env.yml 
-$ conda activate spdisag_env
-$ git checkout multi-output_RF_GB
+$ conda env create -f envTF.yml 
+$ conda activate spdisagTF_env
+$ git checkout basic_cnn
 ```
 ### Input Data Structure
 #### Population Data Preparation
@@ -91,7 +90,7 @@ Perform dasymetric mapping on Amsterdam data with 2 different population groups 
 ```
 python main.py --attr_value children students mobadults nmobadults elderly sur ant mar tur nonwestern western autoch --city ams \
 --group_split 5 12 --popraster GHS_POP_100_near_cubicspline.tif --key Buurtcode --run_Pycno no --run_Dasy no \
---run_Disaggregation yes --iterMax 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 \
+--run_Disaggregation yes --maxIters 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 \
 --verMassPreserv no --run_Evaluation no
 ```
 

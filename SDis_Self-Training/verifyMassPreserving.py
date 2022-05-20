@@ -2,7 +2,7 @@ from utils import osgu, npu
 import geopandas as gpd, numpy as np
 import os, collections
 from pathlib import Path
-from evaluation import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error, prop_error
+from evaluating import rmse_error, mae_error, nrmse_error ,nmae_error, mape_error
 
 def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value):
     """[Returns difference between predictions and ground truth data]
@@ -20,7 +20,7 @@ def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value
 
     for i in evalList:
         fileName = Path(i).stem
-        method = fileName.split("_",3)[-1]
+        method = fileName #.split("_",3)[-1]
         print(fileName, method)
         raster, rastergeo = osgu.readRaster(i)
         nrowsds = raster.shape[1]
@@ -51,7 +51,6 @@ def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value
             r2 = round(rmse_error(true, predicted), 1)
             r3 = round(nmae_error(true, predicted), 4)
             r4 = round(nrmse_error(true, predicted), 4)
-            r5 = prop_error(true, predicted)[0]
             r6 = mape_error(true, predicted)
             
             stdtrue = round(np.std(true, dtype=np.float64),3)
@@ -61,13 +60,13 @@ def verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, attr_value
             filenamemetrics2e = csv_output
             if os.path.exists(filenamemetrics2e):
                 with open(filenamemetrics2e, 'a') as myfile:
-                    myfile.write(method + ';' + str(r1) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(r5) + ';' 
+                    myfile.write(method + ';' + str(r1) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4)  + ';' 
                                 + str(r6) +';' + str(actSum) + ';' + str(predSum) + ';' + str(stdtrue) + ';' + str(stdPred) + '\n')       
             else:
                 with open(filenamemetrics2e, 'w+') as myfile:
                     myfile.write('Comparison among the predictions and the ground truth data for the Municipality of Amsterdam\n')
                     myfile.write('Method;MAE;RMSE;MAEMEAN;RMSEMEAN;PrE;PE;ActualSum;PredictedSum;ActualSTD;PredictedSTD\n')
-                    myfile.write(method + ';' + str(r1) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(r5) + ';' 
+                    myfile.write(method + ';' + str(r1) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4)  + ';' 
                                 + str(r6) + ';' + str(actSum) + ';' + str(predSum) + ';' + str(stdtrue) + ';' + str(stdPred) + '\n')
         else:
             print("----- ALL GOOD FOR {} -----\n YOU MAY PROCEED WITH THE ANALYSIS!".format(attr_value))    

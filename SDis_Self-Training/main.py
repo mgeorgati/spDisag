@@ -7,14 +7,14 @@ import json
 def main():
     parser = argparse.ArgumentParser(description='Parameters for multi-output disaggregation with RF and GB')
     parser.add_argument('--attr_value', nargs='+', required=True, help='Input population groups')
-    parser.add_argument('--city', type=str, default="ams", help='City, case study area')
+    parser.add_argument('--city', type=str,  help='City, case study area')
     parser.add_argument('--group_split', nargs='+', type=int, required=True, help='Points to split the demographic groups')
     parser.add_argument('--popraster', type=str, default='GHS_POP_100_near_cubicspline.tif', help='GHS input layer')
     parser.add_argument('--key', type=str, help='Common key between shp and csv')
     parser.add_argument('--run_Pycno', type=str, default='no', help='Run pycnophylactic interpolation')
     parser.add_argument('--run_Dasy', type=str, default='no', help='Run dasymetric mapping')
     parser.add_argument('--run_Disaggregation', type=str, default='no', help='Run disaggregation')
-    parser.add_argument('--maxIters', type=int, default=2, help='Max Iterations')
+    parser.add_argument('--maxIters', default=2, type=int,  choices=range(2, 100), help='Max Iterations')
     parser.add_argument('--methodopts', nargs='+', help='Select method of disaggregation (aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor))')
     #choices = ['aplm', 'aprf', 'apcatbr']
     parser.add_argument('--ymethodopts',  nargs='+', help='Input layers')

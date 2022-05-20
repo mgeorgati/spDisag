@@ -1,9 +1,9 @@
 import glob
-
-from config import (ROOT_DIR, ancillary_path,  python_scripts_folder_path,
-                                pop_path, year)
-from evaluation import evalRsNL
-from evaluation import evalRsDK
+from datetime import datetime
+from config import (ROOT_DIR, ancillary_path, python_scripts_folder_path,
+                                pop_path, year, gdal_rasterize_path)
+from evaluating import evalRsNL
+from evaluating import evalRsDK
 from mainFunctions import createFolder
 from runDasymetricMapping import run_dasy
 from runDisaggregation import run_disaggregation
@@ -44,7 +44,7 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
                 cnnmodelopts = ['unet']
                 print(inputDataset)
                 for i in inputDataset:
-                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, i, maxIters, python_scripts_folder_path)
+                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, i, maxIters, gdal_rasterize_path)
         else:
             print("---------- YOU NEED TO DEFINE METHODOPTS ----------")
     if verMassPreserv == "yes":
@@ -55,7 +55,7 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
         for ymethod in ymethodopts:
             if isinstance(attr_value, list):
                 for i in attr_value:
-                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it2*{1}.tif".format(ymethod,i,ymethod.lower(),city))
+                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/*_{1}.tif".format(ymethod,i,ymethod.lower(),city))
                     #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
                     csv_output = ROOT_DIR + '/Results/{1}/{3}/{0}_Eval_{2}.csv'.format(year,city,i,ymethod)
                     verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, i)
@@ -67,17 +67,25 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
                 verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output,attr_value)
                 
     if run_Evaluation == "yes":
-        pop_path_case = pop_path + "/{}/".format(city)
-        if isinstance(attr_value, list):
-            for i in attr_value:
-                print("Evaluation possible")
-                if city == 'ams':
-                    print("Evaluation Not possible")
-                    evalRsNL.eval_Results_ams(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
-                elif city == 'cph':
-                    print("Evaluation Not possible")
-                    evalRsDK.eval_Results_cph(ROOT_DIR, pop_path_case, ancillary_path_case, year, city, i)
-        else:
-            print("Evaluation Not possible")
+        calc_Metrics = True
+        plot_evalMaps = False
+        date = datetime.now().strftime("%Y%m%d")
+        evalPath = ROOT_DIR + "/Evaluation/{0}_{1}/".format(city,date)
+        for method in methodopts:
+            if isinstance(attr_value, list):
+                for i in attr_value:
+                    print("Evaluation possible")
+                    if city == 'ams':
+                        if calc_Metrics:
+                            evalRsNL.eval_Results_Metrics(year, pop_path, city, i, ROOT_DIR, evalPath, method)
+                        if plot_evalMaps:
+                            print('????----- YOU NEED TO FIX THIS -----????') 
+                            #evalRsNL.eval_Results_ams(ROOT_DIR, pop_path, ancillary_path_case, year, city, i)
+                    elif city == 'cph':
+                        print("Evaluation Not possible")
+                        print('????----- YOU NEED TO FIX THIS -----????')
+                        #evalRsDK.eval_Results_cph(ROOT_DIR, pop_path, ancillary_path_case, year, city, i)
+            else:
+                print("Evaluation Not possible")
     
     

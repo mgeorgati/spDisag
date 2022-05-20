@@ -14,11 +14,124 @@ from plotting.plotRaster import plot_map
 from plotting.plotVectors import plot_mapVectorPolygons
 from utils import gdalutils, osgu
 
-from evaluation import mae_error, mape_error, percentage_error, rmse_error
+from evaluating import Rsquared, mae_error, mape_error, percentage_error, rmse_error
 
 """
     EVALUATION OF THE PREDICTIONS WITH THE GROUND TRUTH DATA OF OISg DATASET
 """
+
+def writeMetrics(pathFile, fileNames, metrics,title):
+    if os.path.exists(pathFile):
+        with open(pathFile, 'a', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(metrics) 
+    else:
+        with open(pathFile, 'w', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            
+            wr.writerow([title])
+            wr.writerow(fileNames)
+            wr.writerow(metrics)
+
+def eval_Results_Metrics(year, pop_path, city, attr_value, ROOT_DIR, evalPath, ymethod):
+    outputGT =  pop_path + "/{1}/GridCells/rasters/{0}_{1}_{2}.tif".format(year,city,attr_value)
+
+    print("----- Select prediction files to be evaluated -----") 
+    evalFiles = [ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it3_{1}.tif".format(city,attr_value),
+                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF1_2018_ams_Dasy_16unet_10epochspi_AIL10_it10_{1}.tif".format(city,attr_value),
+                 ROOT_DIR + "/Results/{0}/apcnn/dissever01_CLF2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{1}.tif".format(city,attr_value),
+                 ROOT_DIR + "/Results/{0}/apcatbr/dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{1}.tif".format(city,attr_value)
+                 ]
+
+    print(evalFiles)
+    print("----- {} files to be evaluated -----".format(len(evalFiles))) 
+
+    metrics2eMAE = evalPath + '/{}_MAE.csv'.format(city)
+    metrics2eRMSE = evalPath + '/{}_RMSE.csv'.format(city)
+    metrics2ePE = evalPath + '/{}_MAPE.csv'.format(city)
+    metrics2eR2 = evalPath + '/{}_R2.csv'.format(city)
+
+    fileNames = []
+    MAE_metrics = []
+    RMSE_metrics = []
+    MAPE_metrics = []
+    r2_metrics = []
+    
+    ##### -------- Process Evaluation: Steps -------- #####
+    print("----- Plotting Population Distribution -----") 
+    print("----- Ground Truth for Amsterdam at Grid Cells -----")      
+    for i in range(len(evalFiles)):
+        file = evalFiles[i]
+        path = Path(file)
+        fileName = path.stem
+        method = fileName.split("_",1)[1]
+        # Clip the predictions to AMS extent 
+        input = file
+        outputPath = evalPath + "/{}".format(ymethod)
+        createFolder(outputPath)
+                    
+        print("----- Step #2: Calculating Metrics -----")
+        src_real = rasterio.open(outputGT)
+        actual = src_real.read(1)
+        
+        src_pred = rasterio.open(input)
+        predicted = src_pred.read(1)
+        predicted[(np.where((predicted <= -100000)))] = np.nan
+        predicted = np.nan_to_num(predicted, nan=0) 
+        actSum = np.nansum(actual)
+        predSum =np.nansum(predicted)
+        
+        actMax = np.nanmax(actual)
+        predMax =np.nanmax(predicted)
+        
+        actMean = np.nanmean(actual)
+        predMean =np.nanmean(predicted)
+        # Read raster to get extent for writing the rasters later
+        ds, rastergeo = osgu.readRaster(input)
+
+        r1, MAEdataset, std = mae_error(actual, predicted) 
+        r2 = rmse_error(actual, predicted)
+        r3 = mape_error(actual,predicted)
+        
+        r4 = Rsquared(actual,predicted)
+        #r6 = percentage_error(actual, predicted)[0]
+        DIVdataset = np.absolute(percentage_error(actual, predicted)[1])
+        DIVdataset[(np.where(DIVdataset == 100))] = 0
+                
+        stdActual = round(np.std(actual, dtype=np.float64),2)
+        stdPred = round(np.std(predicted, dtype=np.float64),2)
+        
+        fileNames.append(fileName)
+        print("{0}/±{1}".format(r1,std))
+        MAE_metrics.append("{0}/±{1}".format(r1,std))
+        RMSE_metrics.append(r2)
+        MAPE_metrics.append(r3)  
+        r2_metrics.append(r4)  
+
+    MAE_metrics.insert(0, attr_value)
+    RMSE_metrics.insert(0, attr_value)
+    MAPE_metrics.insert(0, attr_value)
+    r2_metrics.insert(0, attr_value)
+    fileNames.insert(0, "Model")
+
+    writeMetrics(metrics2eMAE, fileNames, MAE_metrics,'MAE for the Municipality of Amsterdam')
+    writeMetrics(metrics2eRMSE, fileNames, RMSE_metrics,'PMSE for the Municipality of Amsterdam')
+    writeMetrics(metrics2ePE, fileNames, MAPE_metrics,'MAPE for the Municipality of Amsterdam')
+    writeMetrics(metrics2eR2, fileNames, r2_metrics,'r2 for the Municipality of Amsterdam')
+
+    if os.path.exists(metrics2ePE):
+        with open(metrics2ePE, 'a', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(MAPE_metrics) 
+    else:
+        with open(metrics2ePE, 'w', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            
+            wr.writerow(['MAPE for the Municipality of Amsterdam'])
+            wr.writerow(fileNames)
+            wr.writerow(MAPE_metrics)
+
+
 def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
     evalPath = ROOT_DIR + "/Evaluation/{}_20220323/".format(city)
     
@@ -73,9 +186,9 @@ def eval_Results_ams(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value)
     print(evalFiles)
     print("----- {} files to be evaluated -----".format(len(evalFiles))) 
 
-    metrics2eMAE = evalPath + '/{}_MAE1.csv'.format(city)
-    metrics2eRMSE = evalPath + '/{}_RMSE1.csv'.format(city)
-    metrics2ePE = evalPath + '/{}_MAPE1.csv'.format(city)
+    metrics2eMAE = evalPath + '/{}_MAE.csv'.format(city)
+    metrics2eRMSE = evalPath + '/{}_RMSE.csv'.format(city)
+    metrics2ePE = evalPath + '/{}_MAPE.csv'.format(city)
     
 
     fileNames = []

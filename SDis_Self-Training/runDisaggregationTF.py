@@ -1,6 +1,7 @@
 import os
 import subprocess
 import warnings
+from utils import gdalutils
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -23,7 +24,8 @@ os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, inputDataset, iterMax, gdal_rasterize_path):
+def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, inputDataset, 
+        iterMax, gdal_rasterize_path):
     """[summary]
 
     Args:
@@ -46,9 +48,10 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     stdivalueopts = [1] # 0.1, 0.5, 1
     dropoutopts = [0.5] # 0.25, 0.5, 0.75
 
+
+    
     fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
     fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city)
-    print('whateve', city, year)
     ancdatasets, rastergeo = selectAncDt(city, year, inputDataset, ancillary_path)        
         
     ancdatasetsopts = [ancdatasets]
@@ -63,6 +66,13 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                                                                                 perc2evaluateopts,
                                                                                 ymethodopts):
         createFolder(ROOT_DIR + "/Results/{0}/{1}/".format(city, method))
+
+        ################################
+        
+        #outfile = ROOT_DIR + '/Results/{}/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10'.format(city) 
+        #gdalutils.calcTotalPop(outfile, attr_value, city, gdal_rasterize_path)
+
+        ##################################
                                                                                 
         if isinstance(attr_value, list):
             listOfFiles = []
@@ -76,15 +86,15 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                 
                 #Create txt file with number of band --> Name of File
                 f = open(ROOT_DIR + '/TempRaster/{1}/{0}_{1}_{2}_{3}.txt'.format(year,city,len(attr_value),ymethod.lower()), "w+")
-                str_files = " ".join(["{}".format(listOfFiles[i]) for i in range(len(listOfFiles))])
+                str_files = " ".join([""" "{}" """.format(listOfFiles[i]) for i in range(len(listOfFiles))])
                 for i,each in enumerate(listOfFiles,start=1):
                     f.write("{}.{}".format(i,each))
                 f.close()
                 print(outfile) 
                 #Write the merged tif file 
-                cmd_tif_merge = """python {0}/gdal_merge.py -o "{1}" -separate {2} """.format(gdal_rasterize_path, outfile, str_files)
+                cmd_tif_merge = """python "{0}/gdal_merge.py" -o "{1}" -separate {2} """.format(gdal_rasterize_path, outfile, str_files)
                 print(cmd_tif_merge)
-                subprocess.call(cmd_tif_merge, shell=False)
+                subprocess.call(cmd_tif_merge, shell=True)
                 yraster = outfile
                 print(yraster)
               
@@ -187,7 +197,9 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         val = attr_value[i]
                         #print(dissdataset.shape, np.nanmax(dissdataset))
                         print('- Writing raster to disk...')
-                        osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF_' + casestudy + '_' + val + '.tif')
+                        
+                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF_' + casestudy
+                        osgu.writeRaster(dissdataset[:,:], rastergeo, outfile + '_' + val + '.tif')
     # ______________________
         # if input is not a list
         else: 
@@ -283,9 +295,12 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                                                                 verbose=True)
 
                     print('- Writing raster to disk...')
-                    osgu.writeRaster(dissdataset, rastergeo, ROOT_DIR + '/Results/{}/'.format(city)  + method + 'dissever00_' + casestudy + '.tif')
+                    outfile = ROOT_DIR + '/Results/{}/'.format(city)  + method + 'dissever00_' + casestudy
+
+                    osgu.writeRaster(dissdataset, rastergeo,  outfile + '.tif')
                 
-
+    
     osgu.removeShape(fshape, city)
-
+    # Calculate total population as average of the sum of the age groups and migrant groups
+    gdalutils.calcTotalPop(outfile, attr_value, city, gdal_rasterize_path)
     

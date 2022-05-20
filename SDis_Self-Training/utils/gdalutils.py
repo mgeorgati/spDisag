@@ -91,3 +91,25 @@ def maskRaster(shpPath, input, output):
     with rasterio.open(output, "w", **out_meta) as dest:
         dest.write(out_image)
                 
+import subprocess
+def calcTotalPop(resultsPath, attr_value, city, python_scripts_folder_path):
+    if city =='ams':
+        cmds = """python {0}/gdal_calc.py -A "{1}_{2}.tif" -B "{1}_{3}.tif"  \
+                    -C "{1}_{4}.tif" -D "{1}_{5}.tif" -E "{1}_{6}.tif" \
+                    --A_band=1 --B_band=1 --C_band=1 --D_band=1 --E_band=1 \
+                    --outfile="{1}_ag_totalpop.tif" \
+                    --calc="A+B+C+D+E" """.format(python_scripts_folder_path, resultsPath, attr_value[0], attr_value[1], attr_value[2], attr_value[3], attr_value[4])
+        subprocess.call(cmds, shell=True)
+
+        cmds = """python {0}/gdal_calc.py -A "{1}_{2}.tif" -B "{1}_{3}.tif"  \
+                    -C "{1}_{4}.tif" -D "{1}_{5}.tif" -E "{1}_{6}.tif" -F "{1}_{7}.tif" -G "{1}_{8}.tif"\
+                    --A_band=1 --B_band=1 --C_band=1 --D_band=1 --E_band=1 --F_band=1 --G_band=1\
+                    --outfile="{1}_mg_totalpop.tif" \
+                    --calc="A+B+C+D+E+F+G" """.format(python_scripts_folder_path, resultsPath, attr_value[5], attr_value[6], attr_value[7], attr_value[8], attr_value[9], attr_value[10], attr_value[11])
+        subprocess.call(cmds, shell=True)
+
+        cmds = """python {0}/gdal_calc.py -A "{1}_ag_totalpop.tif" -B "{1}_mg_totalpop.tif"  \
+                    --A_band=1 --B_band=1 \
+                    --outfile="{1}_totalpop.tif" \
+                    --calc="(A+B)/2" """.format(python_scripts_folder_path, resultsPath)
+        subprocess.call(cmds, shell=True)

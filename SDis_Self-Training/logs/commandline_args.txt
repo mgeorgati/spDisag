@@ -18,10 +18,10 @@
     5,
     12
   ],
-  "popraster": "GHS_POP_100_near_cubicspline.tif",
+  "popraster": "GHS_POP_100_near_cubicsplineWaterIESM_new.tif",
   "key": "Buurtcode",
-  "run_Pycno": "yes",
-  "run_Dasy": "yes",
+  "run_Pycno": "no",
+  "run_Dasy": "no",
   "run_Disaggregation": "yes",
   "maxIters": 2,
   "methodopts": [
@@ -33,6 +33,6 @@
   "inputDataset": [
     "AIL12"
   ],
-  "verMassPreserv": "yes",
+  "verMassPreserv": "no",
   "run_Evaluation": "no"
 }

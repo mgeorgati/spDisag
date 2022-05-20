@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import rasterio
-from evaluation import mev
+from evaluating import mev
 from models import caret, ku
 from sklearn import metrics
 from utils import gput, neigPairs, npu, osgu

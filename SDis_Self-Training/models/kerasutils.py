@@ -364,6 +364,7 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         # Robust Loss Function
         #sl1 = rbs.CustomLossFunction(width, length, targets)
         #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
+        
         # RMSE
         #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
         

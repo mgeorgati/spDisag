@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import rasterio
-from evaluation import mev
+from evaluating import mev
 from models import caret, ku
 from sklearn import metrics
 from utils import gput, neigPairs, npu, osgu
@@ -118,7 +118,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         #     epochspi = epochspi + 10
            
         if method.endswith('cnn'):
-            print("This is for the CNN") #UNCOMMENT IT FOR CNN
             
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0

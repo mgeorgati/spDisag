@@ -72,7 +72,7 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmo
                 
                 #Create txt file with number of band --> Name of File
                 f = open(ROOT_DIR + '/TempRaster/{1}/{0}_{1}_{2}_{3}.txt'.format(year,city,len(attr_value),ymethod.lower()), "w+")
-                str_files = " ".join(["{}".format(listOfFiles[i]) for i in range(len(listOfFiles))])
+                str_files = " ".join([""" "{}" """.format(listOfFiles[i]) for i in range(len(listOfFiles))])
                 for i,each in enumerate(listOfFiles,start=1):
                     f.write("{}.{}".format(i,each))
                 f.close()

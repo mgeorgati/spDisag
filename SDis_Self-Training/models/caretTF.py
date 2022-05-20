@@ -6,7 +6,6 @@ import math
 
 import numpy as np
 import tensorflow as tf
-
 from tensorflow.keras import utils
 from tensorflow.keras.callbacks import EarlyStopping
 from utils import npu
@@ -288,15 +287,8 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
                 test_type(predhr)
                 print('| ---- Reconstructing HR image from patches..')
                 if len(predhr.shape) == 4:
-                    print("in the if")
-                    print(dissshape)
                     aux = [ ku.reconstructpatches(predhr[:,:,:,a], (dissshape[0],dissshape[1]), stride) for a in range(predhr.shape[3]) ]
-                    test_type(aux)
-                    test_type(aux[0])
-                    print("AUX")
-                    test_type(np.moveaxis( np.array(aux), 0, 2))
                     predlist = np.dsplit(np.moveaxis( np.array(aux), 0, 2), 12)
-                    test_type(predlist)
                     return predlist
 
         elif mod.startswith('2r'):
