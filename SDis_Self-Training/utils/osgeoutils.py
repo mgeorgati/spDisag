@@ -5,7 +5,7 @@ from osgeo import ogr, gdal, osr
 import numpy as np
 import geopandas as gpd, pandas as pd
 import os
-from config.definitions import ROOT_DIR
+from config import ROOT_DIR
 
 def readmultiBandRaster(file,band):
     raster = gdal.Open(file)

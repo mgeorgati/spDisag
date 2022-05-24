@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np, random
 from sklearn.feature_extraction.image import extract_patches_2d
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
@@ -7,7 +7,7 @@ from tensorflow.keras.backend import *
 from tensorflow.keras import optimizers
 from tensorflow.keras.initializers import *
 from tensorflow.keras import activations
-
+from mainFunctions import test_type
 from itertools import product
 #from models import rbs
 import itertools
@@ -27,18 +27,28 @@ def averagepreds(y_pred):
     return y_pred[0]
 
 def averageinst(y_pred):
-    y_pred[0] = tf.math.add(y_pred[0][:,:,:,:], y_pred[1][:,:,:,:])
-    y_pred[0] = tf.math.divide(y_pred[0], tf.cast(2, tf.float32))
-    return y_pred
+    print('----IN AVERAGE')
+    y = tf.split(y_pred, 2, axis =3)
+    aver_pred = tf.keras.layers.Average()([y[0], y[1]])
+    test_type(aver_pred)
+    #y_pred[0] = tf.math.add(y_pred[0][:,:,:,:], y_pred[1][:,:,:,:])
+    #y_pred[0] = tf.math.divide(y_pred[0], tf.cast(2, tf.float32))
+
+    return aver_pred
 
 def custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False):
     def cl1(y_true, y_pred):
         
         # Condition doesn't work and finds issue in math.add
         #y_pred_final = tf.cond(tf.math.equal(nmodelpred, 2), averageinst(y_pred), y_pred)
-        if nmodelpred == 2: y_pred_final = averageinst(y_pred)
-        else: y_pred_final = y_pred
-
+        if nmodelpred == 2: 
+            y_pred_final = averageinst(y_pred)
+            y_pred = y_pred_final
+        else: 
+            y_pred_final = y_pred
+        test_type(y_pred)
+        test_type(y_pred_final)
+        print('------ IN CLF----')
         numfinite = tf.math.count_nonzero(tf.math.is_finite(y_true[:,:,:,0]))
         mask = tf.where(tf.math.is_nan(y_true), K.constant(0.0), K.constant(1.0))
         y_true = tf.math.multiply_no_nan(y_true, mask)
@@ -71,21 +81,6 @@ def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
         y_true = tf.math.multiply_no_nan(y_true, mask)
         y_pred = tf.math.multiply_no_nan(y_pred, mask)
         y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
-        
-        # # Huber Loss
-        # HUBER_DELTA = hubervalue
-        # x = K.abs(y_true - y_pred)
-        # x = tf.where(x < HUBER_DELTA, 0.5 * x ** 2, HUBER_DELTA * (x - 0.5 * HUBER_DELTA))
-        #
-        # huberloss = K.sum(x)
-        # # huberloss = K.sum(x) - stdivalue * K.std(y_pred)
-        # # huberloss = K.sum(x) + 10000*1/(1+K.std(y_pred))
-        # return tf.math.divide_no_nan(huberloss, tf.cast(numfinite, tf.float32))
-
-        # MAE
-        # mae = K.mean(K.abs(y_pred - y_true))
-        # mae = K.mean(K.abs(y_pred - y_true)) + 10000*1/(1+K.std(y_pred))
-        # return tf.math.divide_no_nan(mae, tf.cast(numfinite, tf.float32))
 
         # # RMSE
         rmse = K.sqrt(K.mean(K.square(y_pred - y_true)))
@@ -243,7 +238,7 @@ def unet(inputs, filters=[2,4,8,16,32], dropout=0.5):
     return output
 
 
-def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lweights=[1/2, 1/2],
+def compilecnnmodel(cnnmod, shape, lrate, useFlippedImages, dropout=0.5, filters=[2,4,8,16,32], lweights=[1/2, 1/2],
                     hubervalue=0.5, stdivalue=0.01):
     tf.random.set_seed(SEED)
 
@@ -319,63 +314,79 @@ def compilecnnmodel(cnnmod, shape, lrate, dropout=0.5, filters=[2,4,8,16,32], lw
         mod.compile(loss='mean_squared_error', optimizer=optimizers.Adam(lr=lrate))
 
     elif cnnmod == 'unet':
-        
-        inputs = Input(shape)
-        print("input of the unet:", inputs.shape)
-        # # Random transformation to apply
-        # randomint = K.constant(random.randint(0, 5))
-        #
-        # def t0(inputs): return Lambda(lambda x: K.reverse(x, axes=1))(inputs) # Horizontal flip
-        # def t1(inputs): return Lambda(lambda x: K.reverse(x, axes=2))(inputs) # Vertical flip
-        # def t2(inputs): return Lambda(lambda x: K.reverse(x, axes=(1,2)))(inputs) # Horizontal and vertical flip
-        # def t3(inputs): return Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(inputs) # Transpose
-        # def t4(inputs): return Lambda(lambda x: K.reverse(t3(x), axes=1))(inputs) # Rotate clockwise
-        # def t5(inputs): return Lambda(lambda x: K.reverse(t3(x), axes=2))(inputs) # Rotate counter clockwise
-        # input_b = tf.case([(tf.equal(randomint, K.constant(0)), lambda: t0(inputs)),
-        #                    (tf.equal(randomint, K.constant(1)), lambda: t1(inputs)),
-        #                    (tf.equal(randomint, K.constant(2)), lambda: t2(inputs)),
-        #                    (tf.equal(randomint, K.constant(3)), lambda: t3(inputs)),
-        #                    (tf.equal(randomint, K.constant(4)), lambda: t4(inputs)),
-        #                    (tf.equal(randomint, K.constant(5)), lambda: t5(inputs))],
-        #                   exclusive=True)
-        #
-        # # Contrastive
-        # # input_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(inputs)
-        # processed_a = unet(inputs, filters, dropout)
-        # processed_b = unet(input_b, filters, dropout)
-        # # processed_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(processed_b)
-        #
-        # processed_b = tf.case([(tf.equal(randomint, K.constant(0)), lambda: t0(processed_b)),
-        #                        (tf.equal(randomint, K.constant(1)), lambda: t1(processed_b)),
-        #                        (tf.equal(randomint, K.constant(2)), lambda: t2(processed_b)),
-        #                        (tf.equal(randomint, K.constant(3)), lambda: t3(processed_b)),
-        #                        (tf.equal(randomint, K.constant(4)), lambda: t5(processed_b)),
-        #                        (tf.equal(randomint, K.constant(5)), lambda: t4(processed_b))],
-        #                      exclusive=True)
+        #useFlippedImages = 'no'
+        if useFlippedImages == 'yes':
+            inputs = Input(shape)
+            
+            print("input of the unet:", inputs.shape)
+            # # Random transformation to apply
+            randomint = K.constant(random.randint(0, 5))
+            #
+            def t0(inputs): return Lambda(lambda x: K.reverse(x, axes=1))(inputs) # Horizontal flip
+            def t1(inputs): return Lambda(lambda x: K.reverse(x, axes=2))(inputs) # Vertical flip
+            def t2(inputs): return Lambda(lambda x: K.reverse(x, axes=(1,2)))(inputs) # Horizontal and vertical flip
+            def t3(inputs): return Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(inputs) # Transpose
+            def t4(inputs): return Lambda(lambda x: K.reverse(t3(x), axes=1))(inputs) # Rotate clockwise
+            def t5(inputs): return Lambda(lambda x: K.reverse(t3(x), axes=2))(inputs) # Rotate counter clockwise
+            
+            input_b = tf.case([(tf.equal(randomint, K.constant(0)), lambda: t0(inputs)),
+                                (tf.equal(randomint, K.constant(1)), lambda: t1(inputs)),
+                                (tf.equal(randomint, K.constant(2)), lambda: t2(inputs)),
+                                (tf.equal(randomint, K.constant(3)), lambda: t3(inputs)),
+                                (tf.equal(randomint, K.constant(4)), lambda: t4(inputs)),
+                                (tf.equal(randomint, K.constant(5)), lambda: t5(inputs))],
+                            exclusive=True)
+            
+            # # Contrastive
+            input_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(inputs)
+            processed_a = unet(inputs, filters, dropout)
+            
+            processed_b = unet(input_b, filters, dropout)
+            processed_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(processed_b)
+            
+            processed_b = tf.case([(tf.equal(randomint, K.constant(0)), lambda: t0(processed_b)),
+                                    (tf.equal(randomint, K.constant(1)), lambda: t1(processed_b)),
+                                    (tf.equal(randomint, K.constant(2)), lambda: t2(processed_b)),
+                                    (tf.equal(randomint, K.constant(3)), lambda: t3(processed_b)),
+                                    (tf.equal(randomint, K.constant(4)), lambda: t5(processed_b)),
+                                    (tf.equal(randomint, K.constant(5)), lambda: t4(processed_b))],
+                                exclusive=True)
 
-        result = unet(inputs, filters, dropout)
-        # THIS ID FOR CONCATENATING THE FLIPPING IMAGES
-        # result = Concatenate()([processed_a, processed_b])
-        mod = Model(inputs=inputs, outputs=result)
+            
+            # THIS IS FOR CONCATENATING THE FLIPPING IMAGES
+            # The result is a tensor of shape: (None, 16, 16, 24)
+            result = Concatenate()([processed_a, processed_b])
+            mod = Model(inputs=inputs, outputs=result)
+            
+            # CUSTOM LOSS
+            sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 2, reduce=False)
+            
+            mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
         
-        # CUSTOM LOSS
-        sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False)
-        
-        # Robust Loss Function
-        #sl1 = rbs.CustomLossFunction(width, length, targets)
-        #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
-        
-        # RMSE
-        #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
-        
-        # HUBER LOSS
-        #sl1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
-        
-        mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
+        else:
+            inputs = Input(shape)
+            print("input of the unet:", inputs.shape)
 
-        # Version 2, c)
-        # slc1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
-        # mod.compile(loss=slc1, optimizer=optimizers.Adam(lr=lrate))
+            result = unet(inputs, filters, dropout)
+            
+            mod = Model(inputs=inputs, outputs=result)
+            
+            # CUSTOM LOSS
+            #sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False)
+            
+            # Robust Loss Function
+            #sl1 = rbs.CustomLossFunction(width, length, targets)
+            #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
+            
+            # RMSE
+            #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+            
+            # HUBER LOSS
+            sl1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
+            
+            mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
+
+        
 
 
     elif cnnmod == '2runet':

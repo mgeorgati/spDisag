@@ -24,7 +24,7 @@ os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, inputDataset, 
+def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, inputDataset, 
         iterMax, gdal_rasterize_path):
     """[summary]
 
@@ -41,14 +41,13 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     epochspiopts = [10]
     batchsizeopts = [64] # 256, 1024ß
     learningrateopts = [0.001] # 0.0, 0.001, census-0.0001 #changed from 0.001
+    useFlippedImages= 'no'
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]
     perc2evaluateopts = [1]
     hubervalueopts = [1] # 0.5, 1
     stdivalueopts = [1] # 0.1, 0.5, 1
     dropoutopts = [0.5] # 0.25, 0.5, 0.75
-
-
     
     fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
     fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city)
@@ -100,27 +99,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
               
             else:
                 yraster = outfile
-                print(yraster)
-            """if not method.endswith('cnn'):
-                print('\n--- Running dissever leveraging a', method, 'model')
             
-                #dissever_year_city_ymethod_method_psamples_lAIL(length&type)_lIL_itl _attrValue
-                casestudy = str(year) + '_' + city + '_' + ymethod + 'B_' + method + '_p' + str(psamples) + \
-                            '_' + str(ancdts.shape[2]) + inputDataset + '_' + str(len(attr_value)) + 'IL_' + 'it' + str(iterMax)
-                dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value,ROOT_DIR, min_iter=3, max_iter=iterMax,
-                                                            perc2evaluate=perc2evaluate, poly2agg= key,
-                                                            rastergeo=rastergeo, method=method, p=psamples,
-                                                            yraster=yraster, casestudy=casestudy,
-                                                            verbose=True) #yraster, 29, 30
-
-                for i in range(len(dissdatasetList)):
-                    dissdataset = dissdatasetList[i]
-                    val = attr_value[i]
-                    #print(dissdataset.shape, np.nanmax(dissdataset))
-                    print('- Writing raster to disk...')
-                    osgu.writeRaster(dissdataset[:,:], rastergeo, ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_' + casestudy + '_' + val + '.tif')#
-            else:"""
-            print("This is for the CNN") #UNCOMMENT IT FOR CNN
             
             for cnnmodel in cnnmodelopts:
                 if cnnmodel == 'lenet':
@@ -179,12 +158,13 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                     #casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
                                 #'_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
                                 #'_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
-                    dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, min_iter=3, max_iter=iterMax,
+                    dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred, 
+                                                                min_iter=3, max_iter=iterMax,
                                                                 perc2evaluate=perc2evaluate,
                                                                 poly2agg=key,
                                                                 rastergeo=rastergeo, method=method, p=psamples,
                                                                 cnnmod=cnnmodel, patchsize=patchsize, batchsize=batchsize,
-                                                                epochspi=epochpi, lrate=learningrate, filters=filters,
+                                                                epochspi=epochpi, lrate=learningrate, useFlippedImages=useFlippedImages, filters=filters,
                                                                 lweights=lossweights, extdataset=extendeddataset,
                                                                 yraster=yraster, converge=1.5,
                                                                 hubervalue=hubervalue, stdivalue=stdivalue,
@@ -198,7 +178,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         #print(dissdataset.shape, np.nanmax(dissdataset))
                         print('- Writing raster to disk...')
                         
-                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_CLF_' + casestudy
+                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_HUber_' + casestudy
                         osgu.writeRaster(dissdataset[:,:], rastergeo, outfile + '_' + val + '.tif')
     # ______________________
         # if input is not a list
@@ -281,7 +261,8 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                     casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
                                 '_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
                                 '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
-                    dissdataset, rastergeo = dissever.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, min_iter=1, max_iter=2,
+                    dissdataset, rastergeo = dissever.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred,
+                                                                min_iter=1, max_iter=2,
                                                                 perc2evaluate=perc2evaluate,
                                                                 poly2agg=key,
                                                                 rastergeo=rastergeo, method=method, p=psamples,

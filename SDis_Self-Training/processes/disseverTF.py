@@ -7,12 +7,12 @@ from evaluating import mev
 from models import caret, ku
 from sklearn import metrics
 from utils import gput, neigPairs, npu, osgu
-
+from mainFunctions import test_type
 from processes import pycno
 
 
-def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
-                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, filters=[2,4,8,16,32],
+def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=None, nmodelpred=None, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
+                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, useFlippedImages=None, filters=[2,4,8,16,32],
                 lweights=[1/2, 1/2], extdataset=None, p=[1], min_iter=3, max_iter=100, converge=2,
                 hubervalue=0.5, stdivalue=0.01, dropout=0.5,
                 casestudy='pcounts', tempfileid=None, verbose=False):
@@ -102,7 +102,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         ancdatasets = ancdatasets * ancvarsmask
         caret.test_type(ancdatasets)
         # Compile model and save initial weights
-        cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, dropout,
+        cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, useFlippedImages, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         print("not Saving the weigths") 
         cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
@@ -135,31 +135,11 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             print('| -- Predicting new values')
             
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
-                                            ancpatches, disseverdatasetA.shape, batchsize=batchsize)
+                                            ancpatches, disseverdatasetA.shape, group_split, nmodelpred, batchsize=batchsize)
             print("predicted maps1")
             caret.test_type(predictedmaps)
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
             caret.test_type(predictedmaps)
-            #predictedmaps = predictedmaps.reshape(predictedmaps.shape[0],predictedmaps.shape[1], 1, predictedmaps.shape[2])
-            #caret.test_type(predictedmaps)
-            #for i in range(len(predictedmaps)): predictedmaps[i] = np.array_split(predictedmaps,predictedmaps.shape[-1])
-            #predictedmaps= predictedmaps[0]
-            #predictedmaps = predictedmaps.reshape(predictedmaps.shape[0],predictedmaps.shape[1], 1, predictedmaps.shape[2])
-            #This is a list of arrays of (440,445,1,n)  
-            
-            # # Including variance
-            # predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
-            #                                  ancpatches, disseverdataset.shape, batchsize=batchsize)
-            # print(predictedmaps[1][:,:,0].shape)
-            # osgu.writeRaster(predictedmaps[1][:,:,0], rastergeo,
-            #                  'pcounts_' + casestudy + '_' + str(k).zfill(2) + 'it_variance.tif')
-            # predictedmaps = predictedmaps[0]
-
-            # New
-            # ancdatasets[np.isnan(ancdatasets)] = 0
-            # predictedmapslm = caret.predict(mod, ancdatasets)
-            # for i in range(len(predictedmapslm)): predictedmapslm[i] = np.expand_dims(predictedmapslm[i], axis=2)
-            # for i in range(len(predictedmaps)): predictedmaps[i] = 0.9 * predictedmaps[i] + 0.1 * predictedmapslm[i]
             
         else:
             print('| -- Fitting the model')

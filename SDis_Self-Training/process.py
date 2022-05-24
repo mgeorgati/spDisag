@@ -11,7 +11,7 @@ from runDisaggregationTF import run_disaggregationTF
 from runPycnophylacticInterpolation import run_pycno
 from verifyMassPreserving import verifyMassPreserv
 
-def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
+def process_data(attr_value, city, group_split, nmodelpred, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
     ancillary_path_case = ancillary_path +"{}".format(city)
     
     createFolder(ROOT_DIR + "/Temp/{}/".format(city))
@@ -44,7 +44,7 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
                 cnnmodelopts = ['unet']
                 print(inputDataset)
                 for i in inputDataset:
-                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, key, i, maxIters, gdal_rasterize_path)
+                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, i, maxIters, gdal_rasterize_path)
         else:
             print("---------- YOU NEED TO DEFINE METHODOPTS ----------")
     if verMassPreserv == "yes":

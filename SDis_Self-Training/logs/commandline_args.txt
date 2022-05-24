@@ -18,12 +18,13 @@
     5,
     12
   ],
+  "nmodelpred": 1,
   "popraster": "GHS_POP_100_near_cubicsplineWaterIESM_new.tif",
   "key": "Buurtcode",
   "run_Pycno": "no",
   "run_Dasy": "no",
   "run_Disaggregation": "yes",
-  "maxIters": 2,
+  "maxIters": 10,
   "methodopts": [
     "apcnn"
   ],

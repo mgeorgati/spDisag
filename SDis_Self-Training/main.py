@@ -9,6 +9,7 @@ def main():
     parser.add_argument('--attr_value', nargs='+', required=True, help='Input population groups')
     parser.add_argument('--city', type=str,  help='City, case study area')
     parser.add_argument('--group_split', nargs='+', type=int, required=True, help='Points to split the demographic groups')
+    parser.add_argument('--nmodelpred', type=int, help='Average with flipped images')
     parser.add_argument('--popraster', type=str, default='GHS_POP_100_near_cubicspline.tif', help='GHS input layer')
     parser.add_argument('--key', type=str, help='Common key between shp and csv')
     parser.add_argument('--run_Pycno', type=str, default='no', help='Run pycnophylactic interpolation')
@@ -33,7 +34,7 @@ def main():
     with open(ROOT_DIR + '/logs/commandline_args.txt', 'r') as f:
         args.__dict__ = json.load(f)
 
-    process_data(attr_value=args.attr_value, city=args.city, group_split=args.group_split, popraster = args.popraster, key=args.key, 
+    process_data(attr_value=args.attr_value, city=args.city, group_split=args.group_split, nmodelpred=args.nmodelpred, popraster = args.popraster, key=args.key, 
             run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
             inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation)
 

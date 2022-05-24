@@ -1,3 +1,4 @@
+from tokenize import group
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -24,19 +25,9 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from utils import npu
 from models import ku
-from mainFunctions import createFolder
+from mainFunctions import createFolder, test_type
 
 SEED = 42
-
-def test_type(l):
-    if isinstance(l,list):
-        print("It is a list with length:", len(l))
-    elif isinstance(l,np.ndarray):
-        print("It is an array with shape:", l.shape)
-    elif tf.is_tensor(l):
-        print("It is a tensor of shape:", l.get_shape())
-    else:
-        raise Exception('wrong type')
 
 def fitlm(X, y):
     mod = LinearRegression()
@@ -406,22 +397,10 @@ def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize
             relevsamples = np.random.choice(len(relevantids), round(len(relevantids) * p[0]), replace=False)
         idsamples = relevantids[relevsamples]
 
-        # Stratified sampling
-        # numstrats = 10
-        # sumaxis0 = np.sum(y, axis=(1, 2, 3))
-        # bins = np.linspace(0, np.nanmax(sumaxis0)+0.0000001, numstrats+1)
-        # digitized = np.digitize(sumaxis0, bins)
-        # numsamp = round(len(relevantids) * p[0] / numstrats + 0.5)
-        # samplevals = [np.random.choice(np.where(digitized == i)[0], min(numsamp, len(sumaxis0[digitized == i])), replace=False) for
-        #               i in range(1, len(bins))]
-        # idsamples = [item for sublist in samplevals for item in sublist]
-        # np.random.shuffle(idsamples)
-
         print('Number of instances (All, >0, X%>0):', y.shape[0], len(relevantids), len(idsamples))
 
         if(cnnmod == 'unet'):
-            print("X shape UNET", X.shape)
-            print("y shape UNET = demo", y.shape)
+            
             if extdataset:
                 #NOT DEFINED
                 Xfit = X[idsamples, :, :, :]
@@ -445,14 +424,6 @@ def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize
                     return hislist
                 else:
                     print('| --- Fit - 1 resolution U-Net Model')
-                    # Xfit = X[idsamples, :, :, :] ## Comentado
-                    # yfit = y[idsamples] ## Comentado
-                    # ctignore = np.isnan(Xfit) ## Comentado
-                    # Xfit[ctignore] = 0 ## Comentado
-
-                    # yfit = np.log(1+yfit)
-                    # yfit[np.isnan(yfit)] = 0
-                    # hislist = [cnnobj.fit(Xfit, yfit, epochs=epochs, batch_size=batchsize)]
 
                     training_generator = DataGenerator(X, y, idsamples, batch_size=batchsize, p=p[0])
                     hislist = [cnnobj.fit(training_generator, epochs=epochs)] #This is history object storing info, e.g. for loss at each epoch
@@ -486,10 +457,10 @@ def predict(mod, X):
     return [pred]
 
 
-def predictloop(cnnmod, patches, batchsize):
+def predictloop(cnnmod, patches, batchsize, group_split, nmodelpred):
     print("in predictloop, patches:", patches.shape)
     # Custom batched prediction loop
-    final_shape = [patches.shape[0], patches.shape[1], patches.shape[2], 12] #This 12 needs to be changes based on input demo ----!!!----
+    final_shape = [patches.shape[0], patches.shape[1], patches.shape[2], group_split[-1]] #This 12 needs to be changes based on input demo ----!!!----
     print("in predictloop, final_patches:", final_shape)
     y_pred_probs = np.empty(final_shape,
                             dtype=np.float32)  # pre-allocate required memory for array for efficiency
@@ -513,10 +484,14 @@ def predictloop(cnnmod, patches, batchsize):
         ctignore = np.isnan(patches[batch_start:batch_end])
         patchespred = patches[batch_start:batch_end].copy()
         patchespred[ctignore] = 0
-        # WE'LL NEED TO ADJUST THAT IF WE INCLUDE THE FLIPPED IMAGES 
-        #y_pred_probs[batch_start:batch_end] = np.expand_dims(
-            #np.mean(cnnmod.predict_on_batch(patchespred), axis=3), axis=3)
-        y_pred_probs[batch_start:batch_end] = cnnmod.predict_on_batch(patchespred) #np.expand_dims(cnnmod.predict_on_batch(patchespred), axis=3) #cnnmod.predict_on_batch(patchespred)
+        # WE'LL NEED TO ADJUST THAT IF WE INCLUDE THE FLIPPED IMAGES  # CHANGED HERE!!!
+        # # # # #
+        if nmodelpred == 2:
+            y_pred_probs[batch_start:batch_end] = np.expand_dims(
+                np.mean(cnnmod.predict_on_batch(patchespred), axis=3), axis=3)
+        # # # # #
+        else:
+            y_pred_probs[batch_start:batch_end] = cnnmod.predict_on_batch(patchespred) #np.expand_dims(cnnmod.predict_on_batch(patchespred), axis=3) #cnnmod.predict_on_batch(patchespred)
         
         # Replace original NANs with NAN
         patchespred[ctignore] = np.nan
@@ -526,10 +501,7 @@ def predictloop(cnnmod, patches, batchsize):
     
     return y_pred_probs
 
-def channelSplit(image):
-    return np.dsplit(image,image.shape[-1])
-
-def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize, stride=1):
+def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, group_split, nmodelpred, batchsize, stride=1):
     if mod == 'lenet':
         print('| --- Predicting new values, Le-Net')
         predhr = obj.predict(ancpatches, batch_size=batchsize, verbose=1)
@@ -561,7 +533,7 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, batchsize
                 return predhr
             else:
                 print('| --- Predicting new patches, 1 resolution U-Net')
-                predhr = predictloop(obj, ancpatches, batchsize=batchsize)
+                predhr = predictloop(obj, ancpatches, batchsize=batchsize, group_split=group_split, nmodelpred = nmodelpred)
                 print("predhr_1")
                 test_type(predhr)
                 print('| ---- Reconstructing HR image from patches..')
