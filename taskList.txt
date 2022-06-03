@@ -1,2 +1,8 @@
 - [ ] Needs cleaning: https://github.com/mgeorgati/DasymetricMapping/tree/master/SDis_Self-Training/dataPrepNL 
 - [x] for a checked checkbox
+
+AncDt.py :
+- [ ] adaptation of the code in order to disregard the files that cannot be found and proceed with the training
+- [ ] write log of the files along with name of case
+
+- [x] Clean the evaluateFunctions, tide up the metrics

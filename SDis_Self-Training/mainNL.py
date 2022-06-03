@@ -27,7 +27,7 @@ attr_value = ['children', 'students','mobadults', 'nmobadults', 'elderly', 'sur'
 #-------- SELECT PROCESS --------
 #1. CALCULATE SIMPLE HEURISTIC ESTIMATES WITH PYCHNOPHYLACTIC OR DASYMETRIC MAPPING
 run_Pycno = "no"
-run_Dasy = "yes"
+run_Dasy = "no"
 
 #2. TRAIN REGRESSION MODEL (FURTHER CHOICES NEED TO BE DEFINED BELOW)
 run_Disaggregation = "no"
@@ -41,7 +41,7 @@ run_Disaggregation = "no"
     # 2.3 SELECT ANCILLARY DATASET
 
 # 3. VERIFY MASS PRESERVATION
-verMassPreserv = "no"
+verMassPreserv = "yes"
 
 # 4. EVALUATE RESULTS
 run_EvaluationGC_ams = "no"
@@ -82,21 +82,21 @@ def process_data(attr_value):
         ##### -------- PROCESS: VERIFY MASS PRESERVATION  -------- #####
         fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
         fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city) 
-        ymethodopts = ['aprf'] #'Dasy', 'Pycno', 'aprf'
+        ymethodopts = ['apcnn'] #'Dasy', 'Pycno', 'aprf'
         for ymethod in ymethodopts:
             if isinstance(attr_value, list):
                 for i in attr_value:
-                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01_*it7*{1}.tif".format(ymethod,i,ymethod.lower(),city))
+                    evalList = glob.glob(ROOT_DIR + "/Results/{3}/{0}/dissever01*it10_{1}.tif".format(ymethod,i,ymethod.lower(),city))
+                    print('lista', evalList)
                     #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
-                    csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
-                    #verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output, i)
+                    csv_output = ROOT_DIR + '/Results/{1}/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,i,ymethod)
+                    verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output, i)
             else:
-                
-                evalList = glob.glob(ROOT_DIR + "/Results/{0}/dissever00*{1}*.tif".format(ymethod,attr_value,ymethod.lower()))
+                evalList = glob.glob(ROOT_DIR + "/Results/{0}/dissever00*_it10_{1}.tif".format(ymethod,attr_value,ymethod.lower()))
                 print(evalList)
                 #evalList = glob.glob(ROOT_DIR + "/Results/{0}/*_{1}_pycno.tif".format(ymethod,i))
                 csv_output = ROOT_DIR + '/Results/{3}/{0}_{1}_Eval_{2}.csv'.format(year,city,attr_value,ymethod)
-                #verifyMassPreserv(fshapea, fcsv, key, evalList, csv_output,attr_value)
+                #verifyMassPreserv(fshapea, city, fcsv, key, evalList, csv_output,attr_value)
                 
     if run_EvaluationGC_ams == "yes":
         pop_path_case = pop_path + "/{}/".format(city)

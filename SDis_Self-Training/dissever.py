@@ -5,7 +5,7 @@ from sklearn import metrics
 import caret
 import gputils as gput
 
-import metricsev as mev
+import evaluating.metricsev as mev
 import neigPairs
 import nputils as npu
 import osgeoutils as osgu

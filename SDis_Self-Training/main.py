@@ -29,7 +29,6 @@ def main():
     with open('commandline_args.txt', 'r') as f:
         args.__dict__ = json.load(f)
 
-    print(args)
     process_data(attr_value=args.attr_value, city=args.city, group_split=args.group_split, popraster = args.popraster, key=args.key, 
             run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
             inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation)

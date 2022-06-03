@@ -14,8 +14,19 @@ def createFolder(path):
         os.makedirs(path)
     else: 
         print("------------------------------ Folder already exists------------------------------")
-"""
+
 import pandas as pd
+def csvTOlatex(input, output):
+    df = pd.read_csv(input, encoding='cp1252')
+    with open(output, 'w', encoding='cp1252') as tf:
+        tf.write(df.to_latex())
+
+def excelTOlatex(input, output):
+    df = pd.read_excel(input)
+    with open(output, 'w') as tf:
+        tf.write(df.to_latex()) 
+"""
+
 ## ## ## ## ## ----- SAVE DATAFRAME TO EXCEL FILE  ----- ## ## ## ## ##
 def dfTOxls(dest_path, fileName, frame):
     # Create a Pandas Excel writer using XlsxWriter as the engine

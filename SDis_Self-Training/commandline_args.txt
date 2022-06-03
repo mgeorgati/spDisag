@@ -1,38 +1,28 @@
 {
   "attr_value": [
-    "children",
-    "students",
-    "mobadults",
-    "nmobadults",
-    "elderly",
-    "sur",
-    "ant",
     "mar",
-    "tur",
-    "nonwestern",
-    "western",
-    "autoch"
+    "tur"
   ],
   "city": "ams",
   "group_split": [
     5,
     12
   ],
-  "popraster": "GHS_POP_100_near_cubicspline.tif",
+  "popraster": "GHS_POP_100_near_cubicsplineWaterIESM_new.tif",
   "key": "Buurtcode",
   "run_Pycno": "no",
   "run_Dasy": "no",
-  "run_Disaggregation": "yes",
+  "run_Disaggregation": "no",
   "maxIters": 2,
   "methodopts": [
-    "apcatbr"
+    "apcnn"
   ],
   "ymethodopts": [
     "Dasy"
   ],
   "inputDataset": [
-    "AIL1"
+    "AIL12"
   ],
   "verMassPreserv": "no",
-  "run_Evaluation": "no"
+  "run_Evaluation": "yes"
 }

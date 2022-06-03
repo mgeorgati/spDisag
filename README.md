@@ -37,14 +37,15 @@ A file with the population dataset along with key field corresponding to the adm
 #### Ancillary Data Preparation
 A folder with tha ancillary data should be stored in the parent folder. The GHS layer is essential to initiate the process. Topographic layers may include information about land uses, building features, etc.
 Links for the ancillary data are provided here:
-    - [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
-    - [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
+- [GHSL population grid](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop) 
+- [CORINE Land Cover](https://land.copernicus.eu/pan-european/corine-land-cover)
+- [European Settlement Map](https://land.copernicus.eu/pan-european/GHSL/european-settlement-map)
  
 You may find the following commands useful for clipping, processing and merging:
 
 ```
 gdal.Translate(output, input, projWin=bbox) 
-python gdal_calc.py -A inputA --A_band=1 --outfile=output.tif --calc="(A==255)
+python gdal_calc.py -A inputA --A_band=1 --outfile=output.tif --calc="(A==255)"
 python gdal_merge.py -o merged.tif -separate in1.tif in2.tif in3.tif
 ```
 
