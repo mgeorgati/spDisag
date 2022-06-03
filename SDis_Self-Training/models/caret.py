@@ -28,7 +28,7 @@ from models import ku
 from mainFunctions import createFolder, test_type
 
 SEED = 42
-
+"""
 def fitlm(X, y):
     mod = LinearRegression()
     mod = mod.fit(X, y)
@@ -277,13 +277,6 @@ def fitM(X, y, p, method, batchsize, lrate, epoch, ROOT_DIR, casestudy,city):
     else:
         return None
 
-def get_callbacks():
-    return [
-        # ReduceLROnPlateau(monitor='loss', min_delta=0.0, patience=3, factor=0.1, min_lr=5e-6, verbose=1),
-        # EarlyStopping(monitor='loss', min_delta=0.001, patience=3, verbose=1, restore_best_weights=True)
-        EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
-    ]
-
 def predictM(mod, X, attr_value):
     newX = X.reshape((-1, X.shape[2]))
     pred = mod.predict(newX)
@@ -291,6 +284,14 @@ def predictM(mod, X, attr_value):
     pred = pred.reshape(X.shape[0], X.shape[1], len(attr_value)) #HER IT NEED TO PASS len(attr_value)
     predlist = np.dsplit(pred, len(attr_value))
     return predlist #[pred]
+"""
+
+def get_callbacks():
+    return [
+        # ReduceLROnPlateau(monitor='loss', min_delta=0.0, patience=3, factor=0.1, min_lr=5e-6, verbose=1),
+        # EarlyStopping(monitor='loss', min_delta=0.001, patience=3, verbose=1, restore_best_weights=True)
+        EarlyStopping(monitor='loss', min_delta=0.01, patience=3, verbose=1, restore_best_weights=True)
+    ]
 
 class DataGenerator(utils.Sequence):
     'Generates data for Keras'
@@ -448,14 +449,14 @@ def fitcnn(X, y, p, ROOT_DIR, city, cnnmod, cnnobj, casestudy, epochs, batchsize
     else:
         print('Fit CNN - Unknown model')
 
-
+"""
 def predict(mod, X):
     newX = X.reshape((-1, X.shape[2]))
     pred = mod.predict(newX)
     # pred = np.exp(pred)-1
     pred = pred.reshape(X.shape[0], X.shape[1])
     return [pred]
-
+"""
 
 def predictloop(cnnmod, patches, batchsize, group_split, nmodelpred):
     print("in predictloop, patches:", patches.shape)
@@ -501,7 +502,7 @@ def predictloop(cnnmod, patches, batchsize, group_split, nmodelpred):
     
     return y_pred_probs
 
-def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, group_split, nmodelpred, batchsize, stride=1):
+def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, group_split, attr_value, nmodelpred, batchsize, stride=1):
     if mod == 'lenet':
         print('| --- Predicting new values, Le-Net')
         predhr = obj.predict(ancpatches, batch_size=batchsize, verbose=1)
@@ -545,7 +546,7 @@ def predictcnn(obj, mod, fithistory, casestudy, ancpatches, dissshape, group_spl
                     test_type(aux[0])
                     print("AUX")
                     test_type(np.moveaxis( np.array(aux), 0, 2))
-                    predlist = np.dsplit(np.moveaxis( np.array(aux), 0, 2), 12)
+                    predlist = np.dsplit(np.moveaxis( np.array(aux), 0, 2), len(attr_value))
                     test_type(predlist)
                     return predlist
 

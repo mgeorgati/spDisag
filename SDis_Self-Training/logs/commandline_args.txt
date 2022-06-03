@@ -5,22 +5,38 @@
     "mobadults",
     "nmobadults",
     "elderly",
-    "sur",
-    "ant",
-    "mar",
-    "tur",
-    "nonwestern",
-    "western",
-    "autoch"
+    "AuNZ",
+    "CentAsia",
+    "EastAsia",
+    "EastEur",
+    "LAC",
+    "Melanesia",
+    "Micronesia",
+    "NorthAfr",
+    "NorthAm",
+    "NorthEur",
+    "OTH",
+    "Polynesia",
+    "SEastAsia",
+    "SouthAsia",
+    "SouthEur",
+    "STA",
+    "SubSahAfr",
+    "WestAsia",
+    "WestEur",
+    "DNK",
+    "EU",
+    "notEU"
   ],
-  "city": "ams",
+  "city": "cph",
   "group_split": [
     5,
-    12
+    24,
+    27
   ],
   "nmodelpred": 1,
   "popraster": "GHS_POP_100_near_cubicsplineWaterIESM_new.tif",
-  "key": "Buurtcode",
+  "key": "KOMNAME",
   "run_Pycno": "no",
   "run_Dasy": "no",
   "run_Disaggregation": "yes",
@@ -32,7 +48,7 @@
     "Dasy"
   ],
   "inputDataset": [
-    "AIL12"
+    "AIL8"
   ],
   "verMassPreserv": "no",
   "run_Evaluation": "no"

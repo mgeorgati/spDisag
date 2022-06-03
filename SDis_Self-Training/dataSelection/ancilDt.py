@@ -25,9 +25,13 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
         ancdataset11A = osgu.readRaster(os.path.join(ancillary_path, 'temp_tif/{0}_schools.tif'.format(year,city)))[0]
         ancdataset12A = osgu.readRaster(os.path.join(ancillary_path, 'temp_tif/{0}_culture.tif'.format(year,city)))[0]
 
-        ancdataset13 = osgu.readRaster(os.path.join(ancillary_path, 'temp_tif/{0}_constryear.tif'.format(year,city)))[0]
-        ancdataset14 = osgu.readRaster(os.path.join(ancillary_path, 'temp_tif/{0}_floors.tif'.format(year,city)))[0]
-        ancdataset15 = osgu.readRaster(os.path.join(ancillary_path, 'temp_tif/bbr_housing_mean.tif'))[0]
+        path_cy  = os.path.join(ancillary_path, 'temp_tif/{0}_constryear.tif'.format(year,city))
+        ancdatasetCY = osgu.readRaster(path_cy)[0]
+        path_bh = os.path.join(ancillary_path, 'temp_tif/{0}_floors.tif'.format(year,city))
+        ancdatasetBH = osgu.readRaster(path_bh)[0]
+        path_hp = os.path.join(ancillary_path, 'temp_tif/bbr_housing_mean.tif')
+        ancdatasetHP = osgu.readRaster(path_hp)[0]
+
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
         if inputDataset == 'AIL0':
             ancdatasets = np.dstack((ancdataset1, ancdataset2, ancdataset3, ancdataset4, ancdataset5, ancdataset6, ancdataset7, ancdataset8))
@@ -39,22 +43,23 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
             ancdatasets = np.dstack((ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A))
         elif inputDataset == 'AIL4':
             ancdatasets = np.dstack((ancdataset2, ancdataset4, ancdataset6, ancdataset7, ancdataset8, ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A, ancdataset13,  ancdataset14,  ancdataset15 ))
-        elif inputDataset == 'AIL5':
-            ancdatasets = np.dstack((ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A, ancdataset13,  ancdataset14,  ancdataset15))
+        #elif inputDataset == 'AIL5':
+            #ancdatasets = np.dstack((ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A, ancdataset13,  ancdataset14,  ancdataset15))
         elif inputDataset == 'AIL6':
             ancdatasets = np.dstack((ancdataset2, ancdataset4, ancdataset5,ancdataset6, ancdataset8,ancdataset9A,ancdataset10A,ancdataset11A,ancdataset12A, ancdataset13))
         elif inputDataset == 'AIL7':
             ancdatasets = np.dstack((ancdataset2, ancdataset3, ancdataset4, ancdataset5, ancdataset6, ancdataset7, ancdataset8, ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A, ancdataset13,  ancdataset14,  ancdataset15 ))
         elif inputDataset == 'AIL8':
-            ancdatasets = np.dstack((ancdataset13, ancdataset14, ancdataset15 ))
-        elif inputDataset == 'AIL9':
+            dataList = [path_cy, path_bh, path_hp]        
+            ancdatasets = np.dstack((ancdatasetCY, ancdatasetBH , ancdatasetHP))
+        """elif inputDataset == 'AIL9':
             ancdatasets = np.dstack((ancdataset2, ancdataset13, ancdataset14, ancdataset15 ))
         elif inputDataset == 'AIL10':
             ancdatasets = np.dstack((ancdataset12A, ancdataset13, ancdataset14, ancdataset15 ))
         elif inputDataset == 'AIL11':
             ancdatasets = np.dstack((ancdataset2, ancdataset12A, ancdataset13, ancdataset14, ancdataset15 ))
         elif inputDataset == 'AIL12':
-            ancdatasets = np.dstack((ancdataset2, ancdataset6, ancdataset13, ancdataset14, ancdataset15 ))
+            ancdatasets = np.dstack((ancdataset2, ancdataset6, ancdataset13, ancdataset14, ancdataset15 ))"""
         
     if city == 'ams':
         
@@ -113,7 +118,6 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
         
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
         if inputDataset == 'AIL0':
-            
             ancdatasets = np.dstack((ancdatasetGHS, ancdatasetESM, ancdatasetAGR, ancdatasetGS, ancdatasetUF, ancdatasetW, ancdatasetIN,ancdatasetTR))
         
         elif inputDataset == 'AIL12':

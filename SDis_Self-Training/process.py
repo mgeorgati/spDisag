@@ -18,6 +18,7 @@ def process_data(attr_value, city, group_split, nmodelpred, popraster, key, run_
     createFolder(ROOT_DIR + "/TempRaster/{}/".format(city))
     createFolder(ROOT_DIR + "/TempCSV/{}/".format(city))
     
+    print(attr_value[0:5],attr_value[5:25], attr_value[24:27])
     if run_Pycno == "yes":
         createFolder(ROOT_DIR + "/Results/{}/Pycno/".format(city))
         ##### -------- PROCESS: RUN PYCNOPHYLACTIC -------- #####

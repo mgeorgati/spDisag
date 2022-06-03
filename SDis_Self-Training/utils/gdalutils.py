@@ -113,3 +113,24 @@ def calcTotalPop(resultsPath, attr_value, city, python_scripts_folder_path):
                     --outfile="{1}_totalpop.tif" \
                     --calc="(A+B)/2" """.format(python_scripts_folder_path, resultsPath)
         subprocess.call(cmds, shell=True)
+    
+    elif city == 'cph':
+        cmds = """python {0}/gdal_calc.py -A "{1}_{2}.tif" -B "{1}_{3}.tif"  \
+                    -C "{1}_{4}.tif" -D "{1}_{5}.tif" -E "{1}_{6}.tif" \
+                    --A_band=1 --B_band=1 --C_band=1 --D_band=1 --E_band=1 \
+                    --outfile="{1}_ag_totalpop.tif" \
+                    --calc="A+B+C+D+E" """.format(python_scripts_folder_path, resultsPath, attr_value[0], attr_value[1], attr_value[2], attr_value[3], attr_value[4])
+        subprocess.call(cmds, shell=True)
+        print(attr_value[24], attr_value[25], attr_value[26])
+        cmds = """python {0}/gdal_calc.py -A "{1}_{2}.tif" -B "{1}_{3}.tif"  \
+                    -C "{1}_{4}.tif" \
+                    --A_band=1 --B_band=1 --C_band=1 \
+                    --outfile="{1}_mg_totalpop.tif" \
+                    --calc="A+B+C" """.format(python_scripts_folder_path, resultsPath, attr_value[24], attr_value[25], attr_value[26])
+        subprocess.call(cmds, shell=True)
+
+        cmds = """python {0}/gdal_calc.py -A "{1}_ag_totalpop.tif" -B "{1}_mg_totalpop.tif"  \
+                    --A_band=1 --B_band=1 \
+                    --outfile="{1}_totalpop.tif" \
+                    --calc="(A+B)/2" """.format(python_scripts_folder_path, resultsPath)
+        subprocess.call(cmds, shell=True)

@@ -12,7 +12,7 @@ from processes import pycno
 
 
 def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=None, nmodelpred=None, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
-                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, useFlippedImages=None, filters=[2,4,8,16,32],
+                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, loss_function=None, useFlippedImages=None, filters=[2,4,8,16,32],
                 lweights=[1/2, 1/2], extdataset=None, p=[1], min_iter=3, max_iter=100, converge=2,
                 hubervalue=0.5, stdivalue=0.01, dropout=0.5,
                 casestudy='pcounts', tempfileid=None, verbose=False):
@@ -102,7 +102,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
         ancdatasets = ancdatasets * ancvarsmask
         caret.test_type(ancdatasets)
         # Compile model and save initial weights
-        cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, useFlippedImages, dropout,
+        cnnobj = ku.compilecnnmodel(cnnmod, attr_value, group_split, [patchsize, patchsize, ancdatasets.shape[2]], lrate, loss_function, useFlippedImages, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         print("not Saving the weigths") 
         cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
@@ -135,7 +135,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             print('| -- Predicting new values')
             
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
-                                            ancpatches, disseverdatasetA.shape, group_split, nmodelpred, batchsize=batchsize)
+                                            ancpatches, disseverdatasetA.shape, group_split, attr_value, nmodelpred, batchsize=batchsize)
             print("predicted maps1")
             caret.test_type(predictedmaps)
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)

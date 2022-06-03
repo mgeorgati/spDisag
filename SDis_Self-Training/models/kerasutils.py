@@ -1,3 +1,4 @@
+from tokenize import group
 import numpy as np, random
 from sklearn.feature_extraction.image import extract_patches_2d
 from tensorflow.keras.models import *
@@ -36,18 +37,16 @@ def averageinst(y_pred):
 
     return aver_pred
 
-def custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False):
+def custom_loss_fn(group_split, nmodelpred = 1, reduce=True):
     def cl1(y_true, y_pred):
         
-        # Condition doesn't work and finds issue in math.add
         #y_pred_final = tf.cond(tf.math.equal(nmodelpred, 2), averageinst(y_pred), y_pred)
         if nmodelpred == 2: 
             y_pred_final = averageinst(y_pred)
             y_pred = y_pred_final
         else: 
             y_pred_final = y_pred
-        test_type(y_pred)
-        test_type(y_pred_final)
+        
         print('------ IN CLF----')
         numfinite = tf.math.count_nonzero(tf.math.is_finite(y_true[:,:,:,0]))
         mask = tf.where(tf.math.is_nan(y_true), K.constant(0.0), K.constant(1.0))
@@ -55,17 +54,44 @@ def custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False):
         y_pred = tf.math.multiply_no_nan(y_pred, mask)
         #y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
         
-        # Custom loss sub-groups
-        sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
-        print(sumtrueg1)
-        sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
-        sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
-        sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
-        
-        loss1 = tf.keras.metrics.mean_absolute_error(sumtrueg1, sumpredg1)
-        loss2 = tf.keras.metrics.mean_absolute_error(sumtrueg2, sumpredg2)
-        loss3 = tf.keras.metrics.mean_squared_error(y_true, y_pred_final)
-        loss = loss1 + loss2 + loss3
+        if len(group_split) == 2 :
+            # Custom loss sub-groups
+            sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:group_split[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:group_split[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, group_split[0]:group_split[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, group_split[0]:group_split[1]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            
+            ##### none
+            loss1 = tf.keras.metrics.mean_absolute_error(sumtrueg1, sumpredg1)
+            loss2 = tf.keras.metrics.mean_absolute_error(sumtrueg2, sumpredg2)
+            loss3 = tf.keras.metrics.mean_squared_error(y_true, y_pred_final)
+
+            ##### _1
+            #loss1 = tf.keras.metrics.mean_squared_error(sumtrueg1, sumpredg1)
+            #loss2 = tf.keras.metrics.mean_squared_error(sumtrueg2, sumpredg2)
+            #loss3 = tf.keras.metrics.mean_squared_error(y_true, y_pred_final)
+
+            ##### _2
+            #loss1 = tf.keras.metrics.mean_absolute_error(sumtrueg1, sumpredg1)
+            #loss2 = tf.keras.metrics.mean_absolute_error(sumtrueg2, sumpredg2)
+            #loss3 = tf.keras.metrics.mean_absolute_error(y_true, y_pred_final)
+
+            loss = loss1 + loss2 + loss3
+        elif len(group_split) == 3 :
+                # Custom loss sub-groups
+            sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:group_split[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:group_split[0]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, group_split[0]:group_split[1]+1], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, group_split[0]:group_split[1]+1], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumtrueg3 = tf.math.reduce_sum(y_true[:, :, :, group_split[1]:group_split[2]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            sumpredg3 = tf.math.reduce_sum(y_pred[:, :, :, group_split[1]:group_split[2]], axis=3, keepdims=True)#, axis=3, keepdims=True)
+            ##### none
+            loss1 = tf.keras.metrics.mean_absolute_error(sumtrueg1, sumpredg1)
+            loss2 = tf.keras.metrics.mean_absolute_error(sumtrueg2, sumpredg2)
+            loss3 = tf.keras.metrics.mean_absolute_error(sumtrueg3, sumpredg3)
+            loss4 = tf.keras.metrics.mean_squared_error(y_true, y_pred_final)
+
+            loss = loss1 + loss2 + loss3 + loss4
 
         # The function tf.keras.metrics.mean_squared_error produced a result with shape = [batch_size, d0, .. dN-1].
         # Do you want that behaviour? Ou do you want to reduce already here the loss function to a single value?
@@ -74,8 +100,13 @@ def custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False):
     return cl1
 #######
 
-def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
+def smoothL1(hubervalue = 0.5, stdivalue = 0.01, nmodelpred=1):
     def sl1(y_true, y_pred):
+        if nmodelpred == 2: 
+            y_pred = averageinst(y_pred)
+        else: 
+            y_pred = y_pred
+        
         numfinite = tf.math.count_nonzero(tf.math.is_finite(y_true))
         mask = tf.where(tf.math.is_nan(y_true), K.constant(0), K.constant(1))
         y_true = tf.math.multiply_no_nan(y_true, mask)
@@ -84,9 +115,6 @@ def smoothL1(hubervalue = 0.5, stdivalue = 0.01):
 
         # # RMSE
         rmse = K.sqrt(K.mean(K.square(y_pred - y_true)))
-        # rmse = K.sqrt(K.mean(K.square(y_pred - y_true))) + 10000*1/(1+K.std(y_pred))
-        print("shape of sl1 in RMSE:", tf.shape(tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32))))
-        print("sl1 in RMSE:", tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32)))
         return tf.math.divide_no_nan(rmse, tf.cast(numfinite, tf.float32))
     return sl1
 
@@ -110,8 +138,7 @@ def smoothLC1(hubervalue = 0.5, stdivalue = 0.01):
         return tf.math.divide_no_nan(sl, tf.cast(numfinite, tf.float32))
     return sl1
 
-
-def unet(inputs, filters=[2,4,8,16,32], dropout=0.5):
+def unet(inputs, attr_value, filters=[2,4,8,16,32], dropout=0.5):
     conv1 = Conv2D(filters[0], 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
     # conv1 = Conv2D(filters[0], 3, padding='same', kernel_initializer='he_normal')(inputs)  # ALTERADO
     # conv1 = BatchNormalization()(conv1)  # ALTERADO
@@ -233,12 +260,12 @@ def unet(inputs, filters=[2,4,8,16,32], dropout=0.5):
     aux = concatenate([conv9, inputs], axis=3)
     # aux = conv9
     print("in UNET: conv9", conv9.shape, "aux:", aux.shape)
-    output = Conv2D(12, 1, activation='linear')(aux) # CHANGED: Conv2D(1, 1, activation='linear')(aux)
+    output = Conv2D(len(attr_value), 1, activation='linear')(aux) # CHANGED: Conv2D(1, 1, activation='linear')(aux)
     print("output of unet:", output.shape)
     return output
 
 
-def compilecnnmodel(cnnmod, shape, lrate, useFlippedImages, dropout=0.5, filters=[2,4,8,16,32], lweights=[1/2, 1/2],
+def compilecnnmodel(cnnmod, attr_value, group_split, shape, lrate, loss_function, useFlippedImages, dropout=0.5, filters=[2,4,8,16,32], lweights=[1/2, 1/2],
                     hubervalue=0.5, stdivalue=0.01):
     tf.random.set_seed(SEED)
 
@@ -314,11 +341,10 @@ def compilecnnmodel(cnnmod, shape, lrate, useFlippedImages, dropout=0.5, filters
         mod.compile(loss='mean_squared_error', optimizer=optimizers.Adam(lr=lrate))
 
     elif cnnmod == 'unet':
-        #useFlippedImages = 'no'
         if useFlippedImages == 'yes':
+            print('| --- Unet - Data augmentation with random method')
             inputs = Input(shape)
             
-            print("input of the unet:", inputs.shape)
             # # Random transformation to apply
             randomint = K.constant(random.randint(0, 5))
             #
@@ -339,9 +365,9 @@ def compilecnnmodel(cnnmod, shape, lrate, useFlippedImages, dropout=0.5, filters
             
             # # Contrastive
             input_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(inputs)
-            processed_a = unet(inputs, filters, dropout)
+            processed_a = unet(inputs, attr_value, filters, dropout)
             
-            processed_b = unet(input_b, filters, dropout)
+            processed_b = unet(input_b, attr_value, filters, dropout)
             processed_b = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1, 3]))(processed_b)
             
             processed_b = tf.case([(tf.equal(randomint, K.constant(0)), lambda: t0(processed_b)),
@@ -352,42 +378,50 @@ def compilecnnmodel(cnnmod, shape, lrate, useFlippedImages, dropout=0.5, filters
                                     (tf.equal(randomint, K.constant(5)), lambda: t4(processed_b))],
                                 exclusive=True)
 
-            
             # THIS IS FOR CONCATENATING THE FLIPPING IMAGES
             # The result is a tensor of shape: (None, 16, 16, 24)
             result = Concatenate()([processed_a, processed_b])
             mod = Model(inputs=inputs, outputs=result)
-            
-            # CUSTOM LOSS
-            sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 2, reduce=False)
+            #SELECT LOSS FUNCTION
+            if loss_function == 'clf':
+                # CUSTOM LOSS
+                sl1 = custom_loss_fn(group_split, nmodelpred = 2, reduce=True) #= [5, 12]
+            elif loss_function == 'rblf':
+                # Robust Loss Function
+                print('THIS FUNCTION NEEDS TO BE FIXED')
+                #sl1 = rbs.CustomLossFunction(width, length, targets)
+                #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
+            elif loss_function == 'rmse':
+                # RMSE
+                sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue, nmodelpred=2)
             
             mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
         
         else:
             inputs = Input(shape)
-            print("input of the unet:", inputs.shape)
+            print('| --- Unet - Using only the input layers, no augmentation')
 
-            result = unet(inputs, filters, dropout)
+            result = unet(inputs, attr_value, filters, dropout)
             
             mod = Model(inputs=inputs, outputs=result)
             
-            # CUSTOM LOSS
-            #sl1 = custom_loss_fn(nsubgroups = [5, 12], nmodelpred = 1, reduce=False)
-            
-            # Robust Loss Function
-            #sl1 = rbs.CustomLossFunction(width, length, targets)
-            #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
-            
-            # RMSE
-            #sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue)
+            #SELECT LOSS FUNCTION
+            if loss_function == 'clf':
+                # CUSTOM LOSS
+                sl1 = custom_loss_fn(group_split, nmodelpred = 1, reduce=True) #nsubgroups = [5, 12]
+            elif loss_function == 'rblf':
+                # Robust Loss Function
+                print('THIS FUNCTION NEEDS TO BE FIXED')
+                #sl1 = rbs.CustomLossFunction(width, length, targets)
+                #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
+            elif loss_function == 'rmse':
+                # RMSE
+                sl1 = smoothL1(hubervalue=hubervalue, stdivalue=stdivalue, nmodelpred=1)
             
             # HUBER LOSS
-            sl1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
+            #sl1 = smoothLC1(hubervalue=hubervalue, stdivalue=stdivalue)
             
             mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
-
-        
-
 
     elif cnnmod == '2runet':
         inputs = Input(shape)
@@ -502,33 +536,4 @@ def reconstructpatches(patches, image_size, stride):
     mean = np.divide(mean, patch_count, out=np.zeros_like(mean), where=patch_count != 0)
     return mean
 
-"""
-#This is the old reconstructPatches Function
-def reconstructpatches(patches, image_size, stride):
-    print("in Reconstruct:", patches.shape, image_size)
-    i_h, i_w = image_size[:2]
-    p_h, p_w = patches.shape[1:3]
-    mean = np.zeros(image_size)
-    patch_count = np.zeros(image_size)
-    n_h = int((i_h - p_h) / stride + 1)
-    n_w = int((i_w - p_w) / stride + 1)
-    for p, (i, j) in zip(patches, product(range(n_h), range(n_w))):
-        patch_count[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += ~np.isnan(p)
-        ctignore = np.isnan(p)
-        p[ctignore] = 0
-        mean[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += p
-        p[ctignore] = np.nan
-    mean = np.divide(mean, patch_count, out=np.zeros_like(mean), where=patch_count != 0)
 
-    # # Including variance
-    # variance = np.zeros(image_size)
-    # for p, (i, j) in zip(patches, product(range(n_h), range(n_w))):
-    #     ctignore = np.isnan(p)
-    #     p[ctignore] = 0
-    #     variance[i * stride:i * stride + p_h, j * stride:j * stride + p_w] += (p - mean[i * stride:i * stride + p_h, j * stride:j * stride + p_w]) ** 2
-    #     p[ctignore] = np.nan
-    # variance = np.divide(variance, patch_count, out=np.zeros_like(variance), where=patch_count != 0)
-    print("mean in Reconstructs:", mean.shape)
-    return mean
-    # return [mean, variance]
-"""

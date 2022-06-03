@@ -41,7 +41,10 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     epochspiopts = [10]
     batchsizeopts = [64] # 256, 1024ß
     learningrateopts = [0.001] # 0.0, 0.001, census-0.0001 #changed from 0.001
+    
     useFlippedImages= 'no'
+    loss_function = 'clf' # 'clf'
+    
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]
     perc2evaluateopts = [1]
@@ -68,7 +71,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
 
         ################################
         
-        #outfile = ROOT_DIR + '/Results/{}/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10'.format(city) 
+        #outfile = ROOT_DIR + '/Results/{}/apcnn/dissever01_RMSE_2018_cph_Dasy_16unet_10epochspi_AIL3_it10'.format(city) 
         #gdalutils.calcTotalPop(outfile, attr_value, city, gdal_rasterize_path)
 
         ##################################
@@ -137,7 +140,8 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                     print('\n--- Running dissever with the following CNN configuration:')
                     print('- Method:', cnnmodel, '| Percentage of sampling:', psamples,
                         '| Epochs per iteration:', epochpi, '| Batch size:', batchsize,
-                        '| Learning rate:', learningrate, '| Filters:', filters,
+                        '| Learning rate:', learningrate, '| Loss Function:', loss_function.upper(), '| Flipped Images:', useFlippedImages, 
+                        '| Filters:', filters,
                         '| Loss weights:', lossweights, '| Patch size:', patchsize,
                         '| Extended dataset:', extendeddataset, '| Huber value:', hubervalue,
                         '| Stdi value:', stdivalue, '| Dropout:', dropout)
@@ -153,18 +157,20 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         tf.config.experimental.set_memory_growth(gpu_instance, True)
 
                     yraster = outfile
-                    casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + \
+                    if useFlippedImages =='yes':
+                        flipped = 'flipped'
+                    else:
+                        flipped =''
+                    casestudy = loss_function.upper() + flipped + '_' + str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + \
                                 '_' + str(epochpi) + 'epochspi' + '_AIL' + str(ancdts.shape[2]) + '_it' + str(iterMax)
-                    #casestudy = str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + '_huber' + str(hubervalue) + \
-                                #'_stdi' + str(stdivalue) + '_dropout' + str(dropout) + \
-                                #'_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + '-ploop-t1'
+                    
                     dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred, 
                                                                 min_iter=3, max_iter=iterMax,
                                                                 perc2evaluate=perc2evaluate,
                                                                 poly2agg=key,
                                                                 rastergeo=rastergeo, method=method, p=psamples,
                                                                 cnnmod=cnnmodel, patchsize=patchsize, batchsize=batchsize,
-                                                                epochspi=epochpi, lrate=learningrate, useFlippedImages=useFlippedImages, filters=filters,
+                                                                epochspi=epochpi, lrate=learningrate, loss_function=loss_function, useFlippedImages=useFlippedImages, filters=filters,
                                                                 lweights=lossweights, extdataset=extendeddataset,
                                                                 yraster=yraster, converge=1.5,
                                                                 hubervalue=hubervalue, stdivalue=stdivalue,
@@ -178,7 +184,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         #print(dissdataset.shape, np.nanmax(dissdataset))
                         print('- Writing raster to disk...')
                         
-                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_HUber_' + casestudy
+                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_' + casestudy
                         osgu.writeRaster(dissdataset[:,:], rastergeo, outfile + '_' + val + '.tif')
     # ______________________
         # if input is not a list
