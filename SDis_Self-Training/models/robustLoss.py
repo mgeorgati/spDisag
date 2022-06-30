@@ -86,9 +86,9 @@ def interpolate1d(x, values, tangents):
   return tf.where(t < 0., value_before, tf.where(t > 1., value_after, value_mid))
 
 class Distribution(object):
-
+  
   def __init__(self):
-    with get_resource_as_file('partition_spline.npz') as spline_file:
+    with get_resource_as_file('/models/partition_spline.npz') as spline_file:
       with np.load(spline_file, allow_pickle=False) as f:
         self._spline_x_scale = f['x_scale']
         self._spline_values = f['values']
@@ -217,6 +217,7 @@ class CustomLossFunction(tf.Module):
       self.aux_l3 = AdaptiveImageLossFunction(image_size=(width,length,targets))
       self.nsubgroups = nsubgroups
       self.nmodelpred = nmodelpred
+      
       self.reduce = reduce
   
   def __call__(self, y_true, y_pred):

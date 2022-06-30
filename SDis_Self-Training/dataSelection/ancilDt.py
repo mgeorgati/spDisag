@@ -115,6 +115,30 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
         
         path_bh = os.path.join(ancillary_path, 'temp_tif/{}_buildingHeight.tif'.format(city))
         ancdatasetBH = osgu.readRaster(path_bh)[0]
+
+        path_totalpop = os.path.join(ancillary_path, 'temp_tif/2008_l1_totalpop.tif'.format(city))
+        ancdatasetTP = osgu.readRaster(path_totalpop)[0]
+        
+        path_agpop1 = os.path.join(ancillary_path, 'temp_tif/2008_l2_children.tif'.format(city))
+        ancdatasetAG1 = osgu.readRaster(path_agpop1)[0]
+        path_agpop2 = os.path.join(ancillary_path, 'temp_tif/2008_l3_students.tif'.format(city))
+        ancdatasetAG2 = osgu.readRaster(path_agpop2)[0]
+        path_agpop3 = os.path.join(ancillary_path, 'temp_tif/2008_l4_mobile_adults.tif'.format(city))
+        ancdatasetAG3 = osgu.readRaster(path_agpop3)[0]
+        path_agpop4 = os.path.join(ancillary_path, 'temp_tif/2008_l5_not_mobile_adults.tif'.format(city))
+        ancdatasetAG4 = osgu.readRaster(path_agpop4)[0]
+        path_agpop5 = os.path.join(ancillary_path, 'temp_tif/2008_l6_elderly.tif'.format(city))
+        ancdatasetAG5 = osgu.readRaster(path_agpop5)[0]
+
+        path_mbpop0 = os.path.join(ancillary_path, 'temp_tif/2008_l7_immigrants.tif'.format(city))
+        ancdatasetMB0 = osgu.readRaster(path_mbpop0)[0]
+        path_mbpop1 = os.path.join(ancillary_path, 'temp_tif/2008_l8_eu_immigrants.tif'.format(city))
+        ancdatasetMB1 = osgu.readRaster(path_mbpop1)[0]
+        path_mbpop2 = os.path.join(ancillary_path, 'temp_tif/2008_l9_noneu_immigrants.tif'.format(city))
+        ancdatasetMB2 = osgu.readRaster(path_mbpop2)[0]
+
+        path_build1 = os.path.join(ancillary_path, 'temp_tif/2008_l25_total_area_of_residence.tif'.format(city))
+        ancdatasetBL1 = osgu.readRaster(path_build1)[0]
         
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
         if inputDataset == 'AIL0':
@@ -124,6 +148,23 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
             dataList = [pathESM, pathC_gsp, pathC_w,  pathC_ip, pathC_tr, path_bsc, path_tsc, path_sc, path_uc, path_cy, path_bv, path_bh]
             ancdatasets = np.dstack((ancdatasetESM, ancdatasetGSP, ancdatasetW, ancdatasetINP, ancdatasetTR, ancdatasetBSC, ancdatasetTSC, ancdatasetSC, ancdatasetUC, ancdatasetCY,  ancdatasetBV,  ancdatasetBH ))
         
+        elif inputDataset == 'AIL20':
+            dataList = [pathESM, path_build1]
+            ancdatasets = np.dstack((ancdatasetESM, ancdatasetBL1))
+        elif inputDataset == 'AIL21':
+            dataList = [path_totalpop, path_mbpop0]
+            ancdatasets = np.dstack((ancdatasetTP, ancdatasetMB0))
+        elif inputDataset == 'AIL22':
+            dataList = [path_totalpop, path_mbpop0, path_build1]
+            ancdatasets = np.dstack((ancdatasetTP, ancdatasetMB0, ancdatasetBL1))
+        elif inputDataset == 'AIL23':
+            dataList = [path_totalpop, path_agpop1, path_agpop2, path_agpop3, path_agpop4, path_agpop5]
+            ancdatasets = np.dstack((ancdatasetTP, ancdatasetAG1, ancdatasetAG2, ancdatasetAG3, ancdatasetAG4, ancdatasetAG5))
+        elif inputDataset == 'AIL24':
+            dataList = [path_totalpop, path_build1]
+            ancdatasets = np.dstack((ancdatasetTP, ancdatasetBL1))
+    
+    
     array ={"name": inputDataset, "files": dataList}
     print('----- Ancillary Data successfully defined -----')
     with open('logs/ancData_list.txt', 'w') as f:

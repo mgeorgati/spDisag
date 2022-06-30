@@ -43,7 +43,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     learningrateopts = [0.001] # 0.0, 0.001, census-0.0001 #changed from 0.001
     
     useFlippedImages= 'no'
-    loss_function = 'clf' # 'clf'
+    loss_function = 'rblf' # 'clf', 'rmse', 'rblf
     
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]
@@ -162,7 +162,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                     else:
                         flipped =''
                     casestudy = loss_function.upper() + flipped + '_' + str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + \
-                                '_' + str(epochpi) + 'epochspi' + '_AIL' + str(ancdts.shape[2]) + '_it' + str(iterMax)
+                                '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + str(inputDataset) + '_it' + str(iterMax)
                     
                     dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred, 
                                                                 min_iter=3, max_iter=iterMax,
@@ -184,7 +184,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                         #print(dissdataset.shape, np.nanmax(dissdataset))
                         print('- Writing raster to disk...')
                         
-                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_' + casestudy
+                        outfile = ROOT_DIR + '/Results/{}/'.format(city) + method + '/dissever01_00' + casestudy
                         osgu.writeRaster(dissdataset[:,:], rastergeo, outfile + '_' + val + '.tif')
     # ______________________
         # if input is not a list

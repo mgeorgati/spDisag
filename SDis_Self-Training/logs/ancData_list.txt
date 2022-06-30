@@ -1,8 +1,17 @@
 {
-  "name": "AIL8",
+  "name": "AIL12",
   "files": [
-    "/home/ubuntu/spDisag/AncillaryData/cph/temp_tif/2018_constryear.tif",
-    "/home/ubuntu/spDisag/AncillaryData/cph/temp_tif/2018_floors.tif",
-    "/home/ubuntu/spDisag/AncillaryData/cph/temp_tif/bbr_housing_mean.tif"
+    "/home/ubuntu/spDisag/AncillaryData/ams/ESM/ams_residential.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_greenSpacesProximity.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/corine/waterComb_ams_CLC_2012_2018.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_industryProximity.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/corine/transp_ams_CLC_2012_2018.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_busstopsCount.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_trainstationsCount.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_schoolCount.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_univCount.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_buildingYear.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_buildingVolume.tif",
+    "/home/ubuntu/spDisag/AncillaryData/ams/temp_tif/ams_buildingHeight.tif"
   ]
 }

@@ -15,7 +15,7 @@ def main():
     parser.add_argument('--run_Pycno', type=str, default='no', help='Run pycnophylactic interpolation')
     parser.add_argument('--run_Dasy', type=str, default='no', help='Run dasymetric mapping')
     parser.add_argument('--run_Disaggregation', type=str, default='no', help='Run disaggregation')
-    parser.add_argument('--maxIters', default=2, type=int,  choices=range(2, 101), help='Max Iterations')
+    parser.add_argument('--maxIters',default=10, type=int,  choices=range(2, 101), help='Max Iterations')
     parser.add_argument('--methodopts', nargs='+', help='Select method of disaggregation (aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor))')
     #choices = ['aplm', 'aprf', 'apcatbr']
     parser.add_argument('--ymethodopts',  nargs='+', help='Input layers')
