@@ -154,33 +154,7 @@ def smoothLC1Adapt(aux_l1,aux_l2, aux_l3, aux_l4,aux_l5, aux_l6, aux_l7,aux_l8, 
         y_true = tf.math.multiply_no_nan(y_true, mask)
         y_pred = tf.math.multiply_no_nan(y_pred, mask)
         y_pred = tf.where(tf.math.is_nan(y_pred), K.constant(0), y_pred)
-        """
-        # DIFFERENCE BETWEEN PRED AND TRUE
-        x1 = aux_l1(y_true - y_pred)
-        x1 = tf.math.divide_no_nan(K.sum(x1), tf.cast(numfinite, tf.float32))
-
-        # DIFFERENCE BETWEEN DIFFERENT PREDICTIONS
-        x2 = aux_l2(K.expand_dims(y_pred[:, :, :, 0], -1) - K.expand_dims(y_pred[:, :, :, 1], -1))
-        x2 = tf.math.divide_no_nan(K.sum(x2), tf.cast(numfinite, tf.float32))
-        """
-        """
-        # RBLF1
-        # Custom loss sub-groups
-        sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)
-        sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)
-        sumtrueg2 = tf.math.reduce_sum(y_true[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)
-        sumpredg2 = tf.math.reduce_sum(y_pred[:, :, :, nsubgroups[0]:nsubgroups[1]], axis=3, keepdims=True)
-
-        loss1 = aux_l1(sumtrueg1 - sumpredg1)
-        loss2 = aux_l2(sumtrueg2 - sumpredg2)
-        print('----IN RBLF----')
-        test_type(loss2)
-        test_type(y_true)
-        test_type(y_pred)
-        # DIFFERENCE BETWEEN PRED AND TRUE
-        x3 = aux_l3(y_true - y_pred)
-        loss3 = tf.math.divide_no_nan(K.sum(x3), tf.cast(numfinite, tf.float32))
-        """
+        
         # Custom loss sub-groups
         sumtrueg1 = tf.math.reduce_sum(y_true[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)
         sumpredg1 = tf.math.reduce_sum(y_pred[:, :, :, 0:nsubgroups[0]], axis=3, keepdims=True)
@@ -573,7 +547,6 @@ def compilecnnmodel(cnnmod, attr_value, group_split, shape, lrate, loss_function
                 # Robust Loss Function
                 print('THIS FUNCTION NEEDS TO BE FIXED')
                 sl1 = smoothLC1Adapt(aux_l1, aux_l2, aux_l3, aux_l4, aux_l5, aux_l6, aux_l7, aux_l8,aux_l9, aux_l10, aux_l11, aux_l12, aux_l13, aux_l14,nmodelpred=1 )
-                #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
                 mod.compile(loss= sl1, optimizer=optimizers.Adam(lr=lrate), run_eagerly=False)
             elif loss_function == 'rmse':
                 mod = Model(inputs=inputs, outputs=result) # CustomModel
