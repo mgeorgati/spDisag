@@ -1,3 +1,4 @@
+import csv
 import glob
 import os
 from pathlib import Path
@@ -6,140 +7,53 @@ import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.mask
-from mainFunctions import createFolder, zonalStat
-from osgeo import gdal
-from plotting.plotRaster import plot_map
-from plotting.plotVectors import plot_mapVectorPolygons
-from utils import gdalutils, osgu
+from mainFunctions import createFolder, csvTOlatex
+from plotting import plot_map, plot_mapVectorPolygons, plotMatrix, scatterplot
+from plotting.createScatterPlot import histplot
+from utils import osgu
+from sklearn.preprocessing import StandardScaler
+from evaluating import (Rsquared, mae_error, mape_error, percentage_error,
+                        residual, rmse_error)
 
-from evaluateFunctions import (div_error, mae_error, nmae_error, nrmse_error,
-                               percentage_error, prop_error, rmse_error)
+def writeMetrics(pathFile, fileNames, metrics, title):
+    if os.path.exists(pathFile):
+        with open(pathFile, 'a', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(metrics) 
+    else:
+        with open(pathFile, 'w', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            
+            wr.writerow([title])
+            wr.writerow(fileNames)
+            wr.writerow(metrics)
 
-"""
-    EVALUATION OF THE PREDICTIONS WITH THE GROUND TRUTH DATA OF DSTg DATASET
-"""
-def eval_Results_GC(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
-    evalPath = ROOT_DIR + "/Evaluation/{}/".format(city)
-
-    # Required files
-    actualPath = ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
-    raster_file = ancillary_path + '/{0}_template/{0}_template_100.tif'.format(city)
-    polyPath = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
-    districtPath = "K:/FUME/demo_popnet-Commit01/data_prep/cph_ProjectData/AncillaryData/CaseStudy/sogn.shp"
-    waterPath = ancillary_path + '/corine/waterComb_cph_CLC_2012_2018.tif'.format(city)
-   
-    aggr_outfileSUMGT = ROOT_DIR + "/Shapefiles/Comb/{0}_{1}.geojson".format(year,city)
-    ##### -------- PLOT Ground truth at Grid Cells -------- #####
-    print("----- Plotting Population Distribution -----") 
-    print("----- Ground Truth for Copenhagen at Grid Cells -----") 
-    templatePathGA = raster_file
-    #ds,rastergeo  = osgu.readRaster(actualPath)
-    # Clip GT to extent of Municipality 
-    data = gdal.Open(templatePathGA)
-    geoTransform = data.GetGeoTransform()
-    minx = geoTransform[0] 
-    maxy = geoTransform[3] 
-    maxx = minx + geoTransform[1] * data.RasterXSize 
-    miny = maxy + geoTransform[5] * data.RasterYSize
-    data = None
-    bbox = (minx,maxy,maxx,miny)
-    outputGTL =  ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
-    if not os.path.exists(outputGTL):
-        gdal.Translate(outputGTL, actualPath, projWin=bbox)
-
-    outputGT =  ROOT_DIR + "/Evaluation/{1}_groundTruth/{0}_{1}_{2}.tif".format(year,city,attr_value)
-    #if not os.path.exists(outputGT):
-        #gdalutils.maskRaster(polyPath, outputGTL, outputGT)
+def eval_Results_Metrics(evalFiles, outputGT,  city, attr_value, evalPath):
     
-    exportPath = evalPath + "/{0}_GT_{1}.png".format(city,attr_value)
-    if not os.path.exists(exportPath):
-        title ="Population Distribution (persons)\n(Ground Truth: {})(2018)".format(attr_value)
-        LegendTitle = "Population (persons)"
-        src = rasterio.open(outputGT)
-        plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath = polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
-    
-    ##### -------- Get files to be processed -------- #####
-    print("----- Get prediction files to be evaluated -----") 
-    # Get all spatial data for neighborhoods in list
-    evalFiles = []
-    # All files ending with .shp with depth of 2 folder
-    evalFiles1 = glob.glob(ROOT_DIR + "/Results/{0}/apcatbr/*{0}_*_{1}.tif".format(city,attr_value))
-    evalFiles2 = glob.glob(ROOT_DIR + "/Results/{0}/aprf/*{0}_*_{1}.tif".format(city,attr_value))
-    evalFiles3 = glob.glob(ROOT_DIR + "/Results/{0}/Dasy/*_{0}_{1}_dasyWIN.tif".format(city,attr_value))
-    evalFiles4 = glob.glob(ROOT_DIR + "/Results/{0}/Pycno/*_{0}_{1}_pycno.tif".format(city,attr_value))
-    evalFiles5 = glob.glob(ROOT_DIR + "/Results/{0}/GHS/*.tif".format(city))
-    evalFiles.extend(evalFiles1)
-    evalFiles.extend(evalFiles2)
-    evalFiles.extend(evalFiles3)
-    #evalFiles.extend(evalFiles4)
-    #evalFiles.extend(evalFiles5)
-    print(evalFiles)
+    print("----- Calculating metrices for {} -----".format(city)) 
     print("----- {} files to be evaluated -----".format(len(evalFiles))) 
 
-    
-    ##### -------- PLOT PREDICTIONS for Greater Copenhagen at Grid Cells -------- #####
-    print("----- Plotting Population Distribution -----") 
-    print("----- ", len(evalFiles), "files for Greater Copenhagen at Grid Cells -----") 
-    evalPathGA = ROOT_DIR + "/Evaluation/{0}_groundTruth/".format(city)
-    for k in evalFiles:
-        path = Path(k)
-        name = path.stem 
-        exportPath = evalPathGA + "/{}.png".format(name)
-        if not os.path.exists(exportPath):
-            title ="Population Distribution (persons)\n({})(2018)".format(name)
-            LegendTitle = "Population (persons)"
-            src = rasterio.open(path)
-            plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath = polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
-    
-    filenamemetrics2e = evalPath + '/{0}_Evaluation_{1}.csv'.format(city, attr_value)
-    if os.path.exists(filenamemetrics2e):
-        os.remove(filenamemetrics2e)
+    metrics2eMAE = evalPath + '/{}_MAE.csv'.format(city)
+    metrics2eRMSE = evalPath + '/{}_RMSE.csv'.format(city)
+    metrics2ePE = evalPath + '/{}_MAPE.csv'.format(city)
+    metrics2eR2 = evalPath + '/{}_R2.csv'.format(city)
 
+    fileNames = []
+    MAE_metrics = []
+    RMSE_metrics = []
+    MAPE_metrics = []
+    r2_metrics = []
+    
     ##### -------- Process Evaluation: Steps -------- #####
-    print("----- Plotting Population Distribution -----") 
-    print("----- Ground Truth for Copenhagen at Grid Cells -----")      
-    for file in evalFiles:
+    print("----- Ground Truth for {} at Grid Cells -----".format(city))      
+    for i in range(len(evalFiles)):
+        file = evalFiles[i]
         path = Path(file)
         fileName = path.stem
-        method = fileName.split("_",1)[1]
-        print(fileName)
         # Clip the predictions to AMS extent 
         input = file
-        if 'aprf' in fileName:
-            if 'dissever00' in fileName:
-                outputPath = evalPath + "/aprf/dissever00"
-                createFolder(outputPath)
-            else:
-                outputPath = evalPath + "/aprf/dissever01"
-                createFolder(outputPath)
-        elif 'apcatbr' in fileName:
-            outputPath = evalPath + "/apcatbr"
-            createFolder(outputPath)
-        elif 'GHS' in fileName:
-            outputPath = evalPath + "/GHS"
-            createFolder(outputPath)
-        elif fileName.endswith('_dasyWIN'):
-            outputPath = evalPath + "/Dasy"
-            createFolder(outputPath)
-        elif fileName.endswith('_pycno'):
-            outputPath = evalPath + "/Pycno"
-            createFolder(outputPath)
-        else: 
-            outputPath = evalPath
-            
-        outputfile = outputPath + "/{0}_{1}.tif".format(city,fileName)
-        #if not os.path.exists(outputfile):
-           # gdalutils.maskRaster(polyPath, input, outputfile)
-        # Plot the population distribution of the predictions 
-        exportPath = outputPath + "/{0}_{1}.png".format(city,fileName)
-        if not os.path.exists(exportPath):
-            print("----- Step #1: Plotting Population Distribution -----")
-            title ="Population Distribution (persons)\n({})(2018)".format(fileName)
-            LegendTitle = "Population (persons)"
-            src = rasterio.open(path)
-            plot_map(city,'popdistribution', src, exportPath, title, LegendTitle, districtPath =  polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
-        
-        print("----- Step #2: Calculating Metrics -----")
+                    
+        print("----- Step #2: Calculating Metrics {}-----".format(attr_value))
         src_real = rasterio.open(outputGT)
         actual = src_real.read(1)
         
@@ -147,149 +61,322 @@ def eval_Results_GC(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
         predicted = src_pred.read(1)
         predicted[(np.where((predicted <= -100000)))] = np.nan
         predicted = np.nan_to_num(predicted, nan=0) 
-        actSum = round(np.nansum(actual),2)
-        predSum = round(np.nansum(predicted),2)
+
+        r1, MAEdataset, std = mae_error(actual, predicted) 
+        r2 = rmse_error(actual, predicted)
+        r3 = mape_error(actual,predicted)
         
-        actMax = round(np.nanmax(actual),2)
-        predMax = round(np.nanmax(predicted),2)
+        r4 = Rsquared(actual,predicted)
+        #r6 = percentage_error(actual, predicted)[0]
+        DIVdataset = np.absolute(percentage_error(actual, predicted)[1])
+        DIVdataset[(np.where(DIVdataset == 100))] = 0
         
-        actMean = round(np.nanmean(actual),2)
-        predMean = round(np.nanmean(predicted),2)
+        fileNames.append(fileName)
+        MAE_metrics.append("{0}/±{1}".format(r1,std))
+        RMSE_metrics.append(r2)
+        MAPE_metrics.append(r3)  
+        r2_metrics.append(r4)  
+
+    MAE_metrics.insert(0, attr_value)
+    RMSE_metrics.insert(0, attr_value)
+    MAPE_metrics.insert(0, attr_value)
+    r2_metrics.insert(0, attr_value)
+    fileNames.insert(0, "Model")
+
+    writeMetrics(metrics2eMAE, fileNames, MAE_metrics,'MAE for {}'.format(city))
+    writeMetrics(metrics2eRMSE, fileNames, RMSE_metrics,'RMSE for {}'.format(city))
+    writeMetrics(metrics2ePE, fileNames, MAPE_metrics,'MAPE for {}'.format(city))
+    writeMetrics(metrics2eR2, fileNames, r2_metrics,'r2 for {}'.format(city))
+
+    csvTOlatex(metrics2eMAE, evalPath + '/{}_MAE.tex'.format(city))  
+    csvTOlatex(metrics2eRMSE, evalPath + '/{}_RMSE.tex'.format(city)) 
+    csvTOlatex(metrics2eR2, evalPath + '/{}_R2.tex'.format(city))  
+    csvTOlatex(metrics2ePE, evalPath + '/{}_MAPE.tex'.format(city))
+
+def eval_Results(evalPath, outputGT, exportPathGT, polyPath, districtPath, waterPath, invertArea,evalFiles, year, city, attr_value, aggr_outfileSUMGT , scatterPath):
+    ##### -------- PLOT Ground truth at Grid Cells -------- #####
+    print("----- Plotting Population Distribution -----") 
+    print("----- Ground Truth for {} at Grid Cells -----".format(city)) 
+    exportPath = exportPathGT + "/{0}_GT_{1}.png".format(city,attr_value)
+    if not os.path.exists(exportPath):
+        title ="Population Distribution (persons)\n(Ground Truth: {})(2018)".format(attr_value)
+        LegendTitle = "Population (persons)"
+        src = rasterio.open(outputGT)
+        plot_map(city, 'popdistribution', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+
+    ##### -------- Process Evaluation: Steps -------- #####
+    print("----- Plotting Population Distribution -----") 
+    print("----- Predictions for Amsterdam at Grid Cells -----")      
+    for i in range(len(evalFiles)):
+        file = evalFiles[i]
+        path = Path(file)
+        fileName = path.stem
+        method = path.parent.stem
+    
+        # Clip the predictions to AMS extent 
+        input = file
+        outputPath = evalPath + "/{}".format(method)
+        createFolder(outputPath)
+            
+        # Plot the population distribution of the predictions 
+        exportPath = outputPath + "/{}.png".format(fileName)
+        if not os.path.exists(exportPath):
+            print("----- Step #1: Plotting Population Distribution -----")
+            title ="Population Distribution (persons)\n({})(2018)".format(fileName)
+            LegendTitle = "Population (persons)"
+            src = rasterio.open(path)
+            plot_map(city,'popdistributionPred', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+                
+        print("----- Step #2: Calculating Metrics {}-----".format(attr_value))
+        src_real = rasterio.open(outputGT)
+        actual = src_real.read(1)
+        
+        src_pred = rasterio.open(input)
+        predicted = src_pred.read(1)
+        predicted[(np.where((predicted <= -100000)))] = np.nan
+        predicted = np.nan_to_num(predicted, nan=0) 
+        
         # Read raster to get extent for writing the rasters later
         ds, rastergeo = osgu.readRaster(input)
 
-        r1, MAEdataset = mae_error(actual, predicted)
-        r2 = round(rmse_error(actual, predicted), 4)
-        r3 = round(nmae_error(actual, predicted), 4)
-        r4 = round(nrmse_error(actual, predicted), 4)
-
-        r5 = prop_error(actual, predicted)[0]
-        MAEdataset = prop_error(actual, predicted)[1]
-        r6 = div_error(actual, predicted)[0]
-        #DIVdataset = div_error(actual, predicted)[1]
-        r6 = percentage_error(actual, predicted)[0]
-        DIVdataset = percentage_error(actual, predicted)[1]
-
-        stdActual = round(np.std(actual, dtype=np.float64),2)
-        stdPred = round(np.std(predicted, dtype=np.float64),2)
+        MAEdataset = mae_error(actual, predicted)[1]
         
-        print("----- Step #2: Writing CSV with Metrics -----")    
-        if os.path.exists(filenamemetrics2e):
-            with open(filenamemetrics2e, 'a') as myfile:
-                myfile.write(fileName + ';' + str(round(r1,3)) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(round(r5,2)) + ';' 
-                            + str(round(r6,2)) +';' + str(actSum) + ';' + str(predSum) +  ';' + str(actMax) + ';' + str(predMax) + ';' + str(round(actMean,2)) + ';' + str(round(predMean,2)) + ';' + str(stdActual) + ';' + str(stdPred) + '\n')       
-        else:
-            with open(filenamemetrics2e, 'w+') as myfile:
-                myfile.write('Comparison among the predictions and the ground truth data for the Municipality of Copenhagen\n')
-                myfile.write('Method;MAE;RMSE;MAEMEAN;RMSEMEAN;PrE;PE;ActualSum;PredictedSum;ActualMax;PredictedMax;ActualMean;PredictedMean;ActualSTD;PredictedSTD\n')
-                myfile.write(fileName + ';' + str(round(r1,3)) + ';'+ str(r2) + ';' + str(r3) + ';' + str(r4) + ';' + str(round(r5,2)) + ';' 
-                            + str(round(r6,2)) + ';' + str(actSum) + ';' + str(predSum) +  ';' + str(actMax) + ';' + str(predMax) + ';' + str(round(actMean,2)) + ';' + str(round(predMean,2)) + ';' + str(stdActual) + ';' + str(stdPred) + '\n')
-               
+        RESdataset = residual(actual, predicted)[0]
+        DIFdataset = residual(actual, predicted)[1]
+        #r6 = percentage_error(actual, predicted)[0]
+        DIVdataset = np.absolute(percentage_error(actual, predicted)[1])
+        DIVdataset[(np.where(DIVdataset == 100))] = 0
+
         # Write the difference and the quotient TIF files (gridcells) 
         print("----- Step #3: Writing TIF files with Difference and quotient -----") 
-        #outfileMAECL = outputPath + "/mae_{0}_{1}CL.tif".format(city,fileName)
-        #outfileDivCL = outputPath + "/div_{0}_{1}CL.tif".format(city,fileName)
-        outfileMAE = outputPath + "/mae_{0}_{1}.tif".format(city,fileName)
-        outfileDiv = outputPath + "/div_{0}_{1}.tif".format(city,fileName)
+        outfileMAE = outputPath + "/mae_ams_{}.tif".format(fileName)
+        outfileDiv = outputPath + "/div_ams_{}.tif".format(fileName)
+        outfileRes = outputPath + "/res_ams_{}.tif".format(fileName)
+        outfileDif = outputPath + "/dif_ams_{}.tif".format(fileName)
+        
         osgu.writeRaster(MAEdataset[:,:], rastergeo, outfileMAE)
         osgu.writeRaster(DIVdataset[:,:], rastergeo, outfileDiv)
-        
-        
-        #gdalutils.maskRaster(polyPath,outfileMAECL, outfileMAE)
-        #gdalutils.maskRaster(polyPath,outfileDivCL, outfileDiv)
-        
-        #os.remove(outfileMAECL)
-        #os.remove(outfileDivCL)
+        osgu.writeRaster(RESdataset[:,:], rastergeo, outfileRes)
+        osgu.writeRaster(DIFdataset[:,:], rastergeo, outfileDif)
         
         # Write the difference and the quotient TIF files (gridcells) 
-        print("----- Step #3A: Plotting Difference and quotient -----") 
+        print("----- Step #3A: Plotting Difference and quotient {}-----".format(attr_value)) 
         exportPath = outputPath + "/mae_{}_Grid.png".format(fileName)
         if not os.path.exists(exportPath):
-            title ="Mean Absolute Error by Neighborhood (persons)\n({})(2018)".format(fileName)
+            title ="Absolute Error (persons)\n({})(2018)".format(fileName)
             LegendTitle = "Absolute Error (persons)"
             src = rasterio.open(outfileMAE)
-            plot_map(city,'mae', src, exportPath, title, LegendTitle, districtPath =  polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
+            plot_map(city,'mae', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = invertArea, addLabels=True)
         
-        exportPath = outputPath + "/div007_{}_Grid.png".format(fileName)
+        exportPath = outputPath + "/div_{}_Grid.png".format(fileName)
         if not os.path.exists(exportPath):
-            title ="Percentage Error (%)\n({})(2018)".format(fileName)
+            title ="Absolute Percentage Error (%)\n({})(2018)".format(fileName)
             LegendTitle = "Error (%)"
             src = rasterio.open(outfileDiv)
-            plot_map(city,'div007', src, exportPath, title, LegendTitle, districtPath = polyPath, neighPath = districtPath , waterPath = waterPath, invertArea = None, addLabels=True)
-        
-        """
-        # Calculate the mean difference and the quotient by neighborhood 
-        # Write Zonal Statistics file and csv
-        print("----- Step #4: Calculating the mean difference and the quotient by neighborhood -----")
-        aggr_outfileMAE = outputPath + "/mae_{0}_{1}.geojson".format(city,fileName)
-        aggr_outfileDiv = outputPath + "/div_{0}_{1}.geojson".format(city,fileName)
-        statistics = "mean"
-        print("----- Step #4A: Calculating ZSTAT (mean) -----")
-        if not os.path.exists(aggr_outfileMAE):
-            print('NO ZONAL STAT CALCULATED')
-            #zonalStat(outfileMAE, aggr_outfileMAE, polyPath, statistics)
-        if not os.path.exists(aggr_outfileDiv):
-            print('NO ZONAL STAT CALCULATED')
-            #zonalStat(outfileDiv, aggr_outfileDiv, polyPath, statistics)
-        
-        print("----- Step #4B: Plotting the mean difference and the quotient by neighborhood -----")
-        src = gpd.read_file(aggr_outfileMAE)
-        #src = src.loc[src['BU_CODE'].str.contains('BU0363')]
-        exportPath = outputPath + "/mae_{}_Polyg.png".format(fileName)
-        if not os.path.exists(exportPath):
-            title ="Mean Absolute Error by Neighborhood (persons)\n({})(2018)".format(fileName)
-            LegendTitle = "Absolute Error (persons)"
-            #plot_mapVectorPolygons(city,'mae', src, exportPath, title, LegendTitle, 'mean_', districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
-        
-        src = gpd.read_file(aggr_outfileDiv)
-        #src = src.loc[src['BU_CODE'].str.contains('BU0363')]
-        exportPath = outputPath + "/div_{}_Polyg.png".format(fileName)
-        if not os.path.exists(exportPath):
-            title ="Mean Percentage Accuracy by Neighborhood (%)\n({})(2018)".format(fileName)
-            LegendTitle = "Mean Accuracy (%)"
-            #plot_mapVectorPolygons(city,'div', src, exportPath, title, LegendTitle, 'mean_', districtPath=districtPath, neighPath=polyPath, waterPath=waterPath, invertArea= None, addLabels=True)
-                  
-        # Calculate the sum of population by neighborhood 
-        # Write Zonal Statistics file and csv
-        print("----- Step #5: Calculating the sum of the population by neighborhood ZSTAT -----")
-        aggr_outfileSUM = outputPath+ "/{0}_{1}.geojson".format(city,fileName)
-        statistics = "sum"
-        print("----- Step #5A: Calculating ZSTAT (sum)-----")
-        if not os.path.exists(aggr_outfileSUM):
-            print('NO ZONAL STAT CALCULATED')
-            #zonalStat(outputfile, aggr_outfileSUM, polyPath, statistics)
-        
-        print("----- Step #5B: Plotting the total population by neighborhood for predictions -----")
-        src = gpd.read_file(aggr_outfileSUM)
-        exportPath = outputPath + "{}_Polyg.png".format(fileName)
-        if not os.path.exists(exportPath):
-            title ="Population Distribution (persons)\n({})(2018)".format(fileName)
-            LegendTitle = "Population (persons)"
-            #plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, 'sum_', districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+            plot_map(city,'pe', src, exportPath, title, LegendTitle, districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
 
-        print("----- Step #5C: Plotting the difference and the quotient of the sum by neighborhood for predictions to the original -----")
-        frame = gpd.read_file(aggr_outfileSUMGT) 
-        frame = frame.set_index('Buurtcode').join(src.set_index('Buurtcode'), lsuffix='_l')
-        frame["dif_{}".format(attr_value)] = frame['sum_'] - frame["{}".format(attr_value)]
-        frame["prop_{}".format(attr_value)] = (frame["{}".format(attr_value)] / frame['sum_'])*100
-        exportPath = outputPath + "/mae0_{}_Polyg.png".format(fileName)
-        if not os.path.exists(exportPath):
-            title ="Error by Neighborhood (persons)\n({})(2018)".format(fileName)
-            LegendTitle = "Error (persons)"
-            #plot_mapVectorPolygons(city,'mae', frame, exportPath, title, LegendTitle, "dif_{}".format(attr_value), districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+        # Scatterplot for GT in x-axis and predictions in y-axis
+        exportPath = scatterPath + "/scat_{}.png".format(fileName)   
+        #scatterplot(path, exportPath, outputGT, 'Ground Truth (persons)', 'Predictions (persons)', 'Scatter plot of Predictions-Ground Truth', 0, 100, 0, 100)
+        
+        # Scatterplot of proportion predictions per gt in y-axis and ground truth in x-axis
+        exportPath = scatterPath + "/scat_div_{}.png".format(fileName) 
+        #scatterplot(Path(outputGT), exportPath, Path(outfileRes), 'Quotient (PR/GT *100)', 'Ground Truth (persons)', 'Distribution of rate Predictions per Ground Truth by Ground Truth', 0,200, 0, 100)
+        
+        # Scatterplot of proportion predictions per gt in y-axis and ground truth in x-axis
+        exportPath = scatterPath + "/scat_dif_{}.png".format(fileName) 
+        #scatterplot(Path(outfileDif), exportPath, Path(path), 'Difference (GT-Pred)', 'Ground Truth (persons)', 'Distribution of error by Ground Truth', -100, 100, 0, 100)
             
-        exportPath = outputPath + "/div0_{}_Polyg.png".format(fileName)
-        if not os.path.exists(exportPath):
-            title ="Percentage Accuracy by Neighborhood (%)\n({})(2018)".format(fileName)
-            LegendTitle = "Accuracy (%)"
-            #plot_mapVectorPolygons(city,'div', frame, exportPath, title, LegendTitle, "prop_{}".format(attr_value), districtPath=districtPath, neighPath=polyPath, waterPath=waterPath, invertArea= None, addLabels=True)
-        """
-    
-    print("----- Step #6: Calculating and Plotting the total population by neighborhood for ground truth-----")   
+    print("----- Step #6: Calculating and Plotting the total population by neighborhood for ground truth {}-----".format(attr_value))   
     src = gpd.read_file(aggr_outfileSUMGT)   
-    exportPath = evalPath + "{0}_{1}_{2}_Polyg.png".format(year,city,attr_value)
+    exportPath = exportPathGT +  "/{0}_GT_{1}_Polyg.png".format(year,city,attr_value)
     if not os.path.exists(exportPath):
-        title ="Population Distribution (persons)\n(source:DST, Municipality)(2018)"
+        title ="Population Distribution (persons)\n(2018)"
         LegendTitle = "Population (persons)"
-        plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, '{}'.format(attr_value), districtPath = polyPath , neighPath = districtPath, waterPath = waterPath, invertArea = None, addLabels=True)
+        plot_mapVectorPolygons(city,'popdistributionPolyg', src, exportPath, title, LegendTitle, '{}'.format(attr_value), districtPath = districtPath, neighPath = polyPath, waterPath = waterPath, invertArea = None, addLabels=True)
+
+    files_in_dir = glob.glob(outputPath + '*/*.tif')
+    print('Files to be removed:', len(files_in_dir))
+    for _file in files_in_dir:
+        os.remove(_file)
+
+def eval_Scatterplots(evalPath, outputGT, evalFiles, city, attr_value, scatterPath):
+    ##### -------- Process Evaluation: Steps -------- #####
+    print("----- Plotting Scatterplots for {0}, {1} -----".format(attr_value,city)) 
+    for i in range(len(evalFiles)):
+        file = evalFiles[i]
+        path = Path(file)
+        fileName = path.stem
+        method = path.parent.stem
+    
+        # Clip the predictions to AMS extent 
+        input = file
+        outputPath = evalPath + "/{}".format(method)
+        createFolder(outputPath)
+            
+        print("----- Step #2: Calculating Metrics {}-----".format(attr_value))
+        src_real = rasterio.open(outputGT)
+        actual = src_real.read(1)
+        
+        src_pred = rasterio.open(input)
+        predicted = src_pred.read(1)
+        predicted[(np.where((predicted <= -100000)))] = np.nan
+        predicted = np.nan_to_num(predicted, nan=0) 
+        
+        # Read raster to get extent for writing the rasters later
+        ds, rastergeo = osgu.readRaster(input)
+
+        MAEdataset = mae_error(actual, predicted)[1]
+        
+        RESdataset = residual(actual, predicted)[0]
+        DIFdataset = residual(actual, predicted)[1]
+        print(DIFdataset.shape)
+        stand_residual = StandardScaler().fit_transform(residual(actual, predicted)[1])
+        #r6 = percentage_error(actual, predicted)[0]
+        
+        DIVdataset = np.absolute(percentage_error(actual, predicted)[1])
+        DIVdataset[(np.where(DIVdataset == 100))] = 0
+
+        # Write the difference and the quotient TIF files (gridcells) 
+        print("----- Step #3: Writing TIF files with Difference and quotient -----") 
+        outfileMAE = outputPath + "/mae_ams_{}.tif".format(fileName)
+        outfileDiv = outputPath + "/div_ams_{}.tif".format(fileName)
+        outfileRes = outputPath + "/res_ams_{}.tif".format(fileName)
+        outfileDif = outputPath + "/dif_ams_{}.tif".format(fileName)
+        outfileStandRes = outputPath + "/standRes_ams_{}.tif".format(fileName)
+        
+        osgu.writeRaster(stand_residual[:,:], rastergeo, outfileStandRes)
+        osgu.writeRaster(DIVdataset[:,:], rastergeo, outfileDiv)
+        osgu.writeRaster(RESdataset[:,:], rastergeo, outfileRes)
+        osgu.writeRaster(DIFdataset[:,:], rastergeo, outfileDif)
+        
+        # Scatterplot for GT in x-axis and predictions in y-axis
+        exportPath = scatterPath + "/scatP_{}.png".format(fileName)   
+        scatterplot(Path(path), Path(outputGT), exportPath, 'Predictions (persons)', 'Ground Truth (persons)',  'Predicted vs Actual', 0, 100, 0, 100)
+        
+        # Scatterplot for GT in x-axis and predictions in y-axis
+        exportPath = scatterPath + "/hist_{}.png".format(fileName)   
+        histplot(Path(path), Path(outputGT), exportPath, 'Predictions (persons)', 'Ground Truth (persons)',  'Predicted vs Actual', x1=None, x2=100, y1=None, y2=None)
+        
+        # Scatterplot for GT in x-axis and predictions in y-axis
+        exportPath = scatterPath + "/scat_{}.png".format(fileName)   
+        scatterplot(Path(outputGT), Path(path), exportPath, 'Ground Truth (persons)', 'Predictions (persons)',  'Predicted vs Actual', 0, 100, 0, 100)
+        
+        # Scatterplot for predictions in x-axis and standardized residuals in y-axis
+        exportPath = scatterPath + "/scatResidualsP_{}.png".format(fileName)   
+        scatterplot(Path(path), Path(outfileStandRes), exportPath, 'Predictions (persons)', 'Standardized Residuals', 'Residuals', x1=0, x2=100, y1=-10, y2=10)
+        
+        # Scatterplot for predictions in x-axis and standardized residuals in y-axis
+        exportPath = scatterPath + "/scatResiduals_{}.png".format(fileName)   
+        scatterplot(Path(outputGT), Path(outfileStandRes), exportPath, 'Ground Truth (persons)', 'Standardized Residuals', 'Residuals', x1=0, x2=100, y1=-10, y2=10)
+        
+        # Scatterplot of proportion predictions per gt in y-axis and ground truth in x-axis
+        exportPath = scatterPath + "/scat_div_{}.png".format(fileName) 
+        #scatterplot(Path(outputGT), exportPath, Path(outfileRes), 'Quotient (PR/GT *100)', 'Ground Truth (persons)', 'Distribution of rate Predictions per Ground Truth by Ground Truth', 0,200, 0, 100)
+        
+        # Scatterplot of proportion predictions per gt in y-axis and ground truth in x-axis
+        exportPath = scatterPath + "/scat_dif_{}.png".format(fileName) 
+        #scatterplot(Path(outfileDif), exportPath, Path(path), 'Difference (GT-Pred)', 'Ground Truth (persons)', 'Distribution of error by Ground Truth', -100, 100, 0, 100)
+            
+    files_in_dir = glob.glob(outputPath + '*/*.tif')
+    print('Files to be removed:', len(files_in_dir))
+    for _file in files_in_dir:
+        os.remove(_file)  
+
+def createMatrices(evalPath, city, attr_value, evalPathKNN, evalPathKNNgf, evalPathMatrices, exportPathGT, fileName, method, scatterPath=None):
+    # Population distribution
+    e= [exportPathGT + "/{0}_GT_{1}.png".format(city,attr_value),
+        evalPath + "/{1}/{0}.png".format(fileName,method),
+        evalPath + "/{1}/mae_{0}_Grid.png".format(fileName,method),
+        evalPath + "/{1}/div_{0}_Grid.png".format(fileName,method),
+        #evalPathKNN + "/convDif_50_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_100_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_200_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_500_{0}.png".format(fileName),
+        evalPathKNNgf + "/convDif_50_{0}.png".format(fileName),
+        evalPathKNNgf + "/convDif_100_{0}.png".format(fileName),
+        evalPathKNNgf + "/convDif_200_{0}.png".format(fileName),
+        evalPathKNNgf + "/convDif_500_{0}.png".format(fileName)]
+    title = "Collection: {0}".format(attr_value)
+    plotMatrix(e, evalPathMatrices, title) 
+    """
+    # Population distribution
+    e= [scatterPath + "/scat_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        scatterPath + "/scat_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scat_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scat_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResiduals_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        scatterPath + "/scatResiduals_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResiduals_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResiduals_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResidualsP_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        scatterPath + "/scatResidualsP_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResidualsP_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
+        scatterPath + "/scatResidualsP_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value)]
+    title = "Collection: {0}".format(attr_value)
+    plotMatrix(e, evalPathMatrices, title) 
+    """
+    """
+    # Population distribution
+    e= [os.path.dirname(os.path.dirname(evalPath)) + "/{0}_GT/{0}_GT_{1}.png".format(city,attr_value),
+        evalPath + "/apcnn/dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_1_CLFflipped2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcatbr/dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{}.png".format(attr_value)]
+    path = evalPath + "/matrices/popdistribution_{0}.png".format(attr_value)
+    title = "Population Distribution: {0}".format(attr_value)
+    plotMatrix(e, path, title) 
+    
+    # Mean Absolute error
+    e= [evalPath + "/apcnn/mae_dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/mae_dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/mae_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/mae_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/mae_dissever01_1_CLFflipped2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/mae_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcatbr/mae_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}_Grid.png".format(attr_value)]
+    path = evalPath + "/matrices/mae_{0}.png".format(attr_value) 
+    title = "Mean Absolute Error: {0}".format(attr_value)
+    plotMatrix(e, path, title) 
+    
+    # MAPE
+    e= [evalPath + "/apcnn/div_dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/div_dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/div_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/div_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/div_dissever01_1_CLFflipped2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcnn/div_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}_Grid.png".format(attr_value),
+        evalPath + "/apcatbr/div_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}_Grid.png".format(attr_value)]
+    path = evalPath + "/matrices/mape_{0}.png".format(attr_value)
+    title = "Mean Absolute Percentage Error: {0}".format(attr_value)
+    plotMatrix(e, path, title) 
+    
+    # Scatterplots
+    e= [evalPath + "/apcnn/scat_div_dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_div_dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_div_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_div_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_div_dissever01_1_CLFflipped2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_div_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcatbr/scat_div_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value)]
+    path = evalPath + "/matrices/scat_div_{0}.png".format(attr_value)
+    title = "Difference per Ground Truth: {0}".format(attr_value)
+    plotMatrix(e, path, title) 
+    
+    e= [evalPath + "/apcnn/scat_dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_dissever01_1_CLFflipped2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/scat_dissever01_2_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcatbr/scat_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value)]
+    path = evalPath + "/matrices/scat_{0}.png".format(attr_value)
+    title = "Quotient per Ground Truth: {0}".format(attr_value)
+    plotMatrix(e, path, title) """
+    
+    
+    
     

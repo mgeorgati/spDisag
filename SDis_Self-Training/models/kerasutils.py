@@ -217,7 +217,7 @@ class CustomModelAdaptive(tf.keras.Model):
         self.aux_l13 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
         self.aux_l14 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
         self.sladapt = smoothLC1Adapt(self.aux_l1, self.aux_l2, self.aux_l3, self.aux_l4, self.aux_l5, self.aux_l6, 
-                self.aux_l7, self.aux_l8, self.aux_l9, self.aux_l10, self.aux_l11, self.aux_l12, self.aux_l13, self.aux_l14, nmodelpred=1)
+                self.aux_l7, self.aux_l8, self.aux_l9, self.aux_l10, self.aux_l11, self.aux_l12, self.aux_l13, self.aux_l14, nmodelpred=2)
     
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
@@ -503,12 +503,25 @@ def compilecnnmodel(cnnmod, attr_value, group_split, shape, lrate, loss_function
                 sl1 = custom_loss_fn(group_split, nmodelpred = 2, reduce=True) #= [5, 12]
                 mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
             elif loss_function == 'rblf':
-                #mod = CustomModelAdaptive(inputs=inputs, outputs=result)
+                aux_l1 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l2 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l3 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l4 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l5 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l6 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l7 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l8 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l9 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l10 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l11 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l12 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l13 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                aux_l14 = aloss.AdaptiveLossFunction(num_channels=1, float_dtype=np.float32)
+                mod = CustomModelAdaptive(inputs=inputs, outputs=result) # CustomModel
                 # Robust Loss Function
                 print('THIS FUNCTION NEEDS TO BE FIXED')
-                #sl1 = rbs.CustomLossFunction(width, length, targets)
-                #variables = ( list(mod.trainable_variables) + list(sl1.trainable_variables) )
-                #mod.compile(loss=sl1, optimizer=optimizers.Adam(lr=lrate))
+                sl1 = smoothLC1Adapt(aux_l1, aux_l2, aux_l3, aux_l4, aux_l5, aux_l6, aux_l7, aux_l8,aux_l9, aux_l10, aux_l11, aux_l12, aux_l13, aux_l14,nmodelpred=2 )
+                mod.compile(loss= sl1, optimizer=optimizers.Adam(lr=lrate), run_eagerly=False)
             elif loss_function == 'rmse':
                 mod = Model(inputs=inputs, outputs=result)
                 # RMSE
@@ -546,7 +559,7 @@ def compilecnnmodel(cnnmod, attr_value, group_split, shape, lrate, loss_function
                 mod = CustomModelAdaptive(inputs=inputs, outputs=result) # CustomModel
                 # Robust Loss Function
                 print('THIS FUNCTION NEEDS TO BE FIXED')
-                sl1 = smoothLC1Adapt(aux_l1, aux_l2, aux_l3, aux_l4, aux_l5, aux_l6, aux_l7, aux_l8,aux_l9, aux_l10, aux_l11, aux_l12, aux_l13, aux_l14,nmodelpred=1 )
+                sl1 = smoothLC1Adapt(aux_l1, aux_l2, aux_l3, aux_l4, aux_l5, aux_l6, aux_l7, aux_l8,aux_l9, aux_l10, aux_l11, aux_l12, aux_l13, aux_l14,nmodelpred )
                 mod.compile(loss= sl1, optimizer=optimizers.Adam(lr=lrate), run_eagerly=False)
             elif loss_function == 'rmse':
                 mod = Model(inputs=inputs, outputs=result) # CustomModel

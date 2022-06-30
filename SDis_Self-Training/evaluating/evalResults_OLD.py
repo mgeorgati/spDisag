@@ -1,7 +1,28 @@
-import os, rasterio
+import glob
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import attr
+import geopandas as gpd
+import numpy as np
+import rasterio
+import rasterio.mask
 from osgeo import gdal
 
-def eval_Results_cph(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
+import osgeoutils as osgu
+from evaluateFunctions import (percentage_error ,div_error, mae_error, nmae_error, nrmse_error,
+                               prop_error, rmse_error)
+from mainFunctions.basic import zonalStat, createFolder
+from gdalutils import maskRaster
+from plotting.plotRaster import plot_map
+from plotting.plotVectors import plot_mapVectorPolygons
+
+"""
+    EVALUATION OF THE PREDICTIONS WITH THE GROUND TRUTH DATA OF DSTg DATASET
+"""
+def eval_Results_GC(ROOT_DIR, pop_path, ancillary_path, year, city, attr_value):
     evalPath = ROOT_DIR + "/Evaluation/{}/".format(city)
 
     # Required files

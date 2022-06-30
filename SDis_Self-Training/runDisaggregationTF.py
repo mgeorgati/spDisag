@@ -42,7 +42,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     batchsizeopts = [64] # 256, 1024ß
     learningrateopts = [0.001] # 0.0, 0.001, census-0.0001 #changed from 0.001
     
-    useFlippedImages= 'no'
+    useFlippedImages= 'yes'
     loss_function = 'rblf' # 'clf', 'rmse', 'rblf
     
     extendeddatasetopts = [None] # None, '2T6'

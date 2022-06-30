@@ -18,7 +18,7 @@
     5,
     12
   ],
-  "nmodelpred": 1,
+  "nmodelpred": 2,
   "popraster": "GHS_POP_100_near_cubicsplineWaterIESM_new.tif",
   "key": "Buurtcode",
   "run_Pycno": "no",

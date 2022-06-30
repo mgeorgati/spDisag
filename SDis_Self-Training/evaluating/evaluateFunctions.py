@@ -45,6 +45,15 @@ def percentage_error(actual, predicted):
     #quotientArray = np.divide(predicted, actual, out=np.ones_like(predicted), where=predicted==actual==0) * 100 
     quotient = round(np.nanmean(quotientArray),2)
     return quotient, quotientArray 
+
+def residual(actual, predicted):
+    actual[(np.where((actual >= 0) & (actual <= 1)))] = 1
+    predicted[(np.where((predicted >= 0) & (predicted <= 1)))] = 1
+    error = actual - predicted
+    #error = error[error !=0]
+    # Anything that is close to 0 is very wrong
+    residual = np.divide(predicted,actual) * 100
+    return residual, error
 """
 def percentage_error(actual, predicted):
     #predicted= np.nan_to_num(predicted, nan=0, posinf=999999, neginf= -999999)
