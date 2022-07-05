@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+import rasterio, pandas as pd, seaborn as sns, numpy as np
+from pathlib import Path
 
 def plotMatrix(fileList, exportPath, title):
     rows = 2
@@ -7,7 +11,7 @@ def plotMatrix(fileList, exportPath, title):
         cols = int(len(fileList)/rows)
         print(cols)
     else:
-        cols = int(round(len(fileList)/rows) + 1)
+        cols = int(round(len(fileList)/rows) )
         print(cols)   
     fig = plt.figure(figsize=(20, 10))
     grid = ImageGrid(fig, 111,  # similar to subplot(111)
@@ -30,4 +34,5 @@ def plotMatrix(fileList, exportPath, title):
     
     plt.cla()
     plt.close()
+
 

@@ -1,4 +1,4 @@
-from msilib.schema import CreateFolder
+from mainFunctions import createFolder
 import os
 from pathlib import Path
 

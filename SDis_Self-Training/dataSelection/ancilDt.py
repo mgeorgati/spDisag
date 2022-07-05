@@ -2,7 +2,8 @@ import numpy as np, os
 from utils import osgu
 import json
 
-def selectAncDt(city, year, inputDataset, ancillary_path):
+def selectAncDt(city, year, inputDataset, ancillary_path, pop_path):
+    print(city, year, inputDataset, ancillary_path)
     
     if city == 'cph':
         ancdataset1, rastergeo = osgu.readRaster(os.path.join(ancillary_path, 'GHS/GHS_POP_100_near_cubicsplineWaterIESM_new.tif'))
@@ -31,13 +32,16 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
         ancdatasetBH = osgu.readRaster(path_bh)[0]
         path_hp = os.path.join(ancillary_path, 'temp_tif/bbr_housing_mean.tif')
         ancdatasetHP = osgu.readRaster(path_hp)[0]
-
+        print('do', inputDataset)
         #'GHS_ESM_corine': '8AIL0', 'GHS_ESM_corine_transp':12AIL1, 'GHS_ESM_corine_transpA': 12AIL2
         if inputDataset == 'AIL0':
             ancdatasets = np.dstack((ancdataset1, ancdataset2, ancdataset3, ancdataset4, ancdataset5, ancdataset6, ancdataset7, ancdataset8))
         elif inputDataset == 'AIL1':
             ancdatasets = np.dstack((ancdataset2, ancdataset3, ancdataset4, ancdataset5, ancdataset6, ancdataset7, ancdataset8))
-        elif inputDataset == 'AIL2':
+        elif inputDataset == 'AIL8':
+            dataList = [path_cy, path_bh, path_hp]        
+            ancdatasets = np.dstack((ancdatasetCY, ancdatasetBH , ancdatasetHP))
+        """elif inputDataset == 'AIL2':
             ancdatasets = np.dstack((ancdataset2, ancdataset3, ancdataset4, ancdataset5,ancdataset6, ancdataset7, ancdataset8, ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A))
         elif inputDataset == 'AIL3':
             ancdatasets = np.dstack((ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A))
@@ -49,9 +53,9 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
             ancdatasets = np.dstack((ancdataset2, ancdataset4, ancdataset5,ancdataset6, ancdataset8,ancdataset9A,ancdataset10A,ancdataset11A,ancdataset12A, ancdataset13))
         elif inputDataset == 'AIL7':
             ancdatasets = np.dstack((ancdataset2, ancdataset3, ancdataset4, ancdataset5, ancdataset6, ancdataset7, ancdataset8, ancdataset9A, ancdataset10A, ancdataset11A, ancdataset12A, ancdataset13,  ancdataset14,  ancdataset15 ))
-        elif inputDataset == 'AIL8':
-            dataList = [path_cy, path_bh, path_hp]        
-            ancdatasets = np.dstack((ancdatasetCY, ancdatasetBH , ancdatasetHP))
+        """
+        
+
         """elif inputDataset == 'AIL9':
             ancdatasets = np.dstack((ancdataset2, ancdataset13, ancdataset14, ancdataset15 ))
         elif inputDataset == 'AIL10':
@@ -61,7 +65,7 @@ def selectAncDt(city, year, inputDataset, ancillary_path):
         elif inputDataset == 'AIL12':
             ancdatasets = np.dstack((ancdataset2, ancdataset6, ancdataset13, ancdataset14, ancdataset15 ))"""
         
-    if city == 'ams':
+    elif city == 'ams':
         
         pathGHS = os.path.join(ancillary_path, 'GHS', 'GHS_POP_100_near_cubicspline.tif')
         ancdatasetGHS, rastergeo = osgu.readRaster(pathGHS)

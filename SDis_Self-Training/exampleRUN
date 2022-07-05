@@ -1,11 +1,14 @@
 python main.py --attr_value children students mobadults nmobadults elderly \
                 AuNZ CentAsia EastAsia EastEur LAC Melanesia Micronesia NorthAfr \
-                NorthAm NorthEur OTH Polynesia SEastAsia SouthAsia SouthEur STA SubSahAfr WestAsia WestEur DNK \ 
-                DNK EU notEU --city cph --group_split 5 24 27 --nmodelpred 1 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME \
-              --run_Pycno no --run_Dasy yes --run_Disaggregation yes --maxIters 2 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8 \
+                NorthAm NorthEur OTH Polynesia SEastAsia SouthAsia SouthEur STA SubSahAfr WestAsia WestEur \ 
+                DNK EU notEU --city cph --group_split 5 23 26 --nmodelpred 1 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME \
+              --run_Pycno no --run_Dasy yes --run_Disaggregation yes --maxIters 10 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8 
               --verMassPreserv no --run_Evaluation no
-python main.py --attr_value children students mobadults nmobadults elderly AuNZ CentAsia EastAsia EastEur LAC Melanesia Micronesia NorthAfr NorthAm NorthEur OTH Polynesia SEastAsia SouthAsia SouthEur STA SubSahAfr WestAsia WestEur DNK EU notEU                 --city cph --group_split 5 24 27 --nmodelpred 1                 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME                 --run_Pycno no --run_Dasy no --run_Disaggregation yes --maxIters 10 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8                 --verMassPreserv no --run_Evaluation no
+python main.py --attr_value children students mobadults nmobadults elderly AuNZ CentAsia EastAsia EastEur LAC Melanesia Micronesia NorthAfr NorthAm NorthEur OTH Polynesia SEastAsia SouthAsia SouthEur STA SubSahAfr WestAsia WestEur DNK EU notEU --city cph --group_split 5 24 27 --nmodelpred 1 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME --run_Pycno no --run_Dasy no --run_Disaggregation yes --maxIters 3 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8 --verMassPreserv no --run_Evaluation no
 
 
+python main.py --attr_value children students mobadults nmobadults elderly DNK EEU EurNonEU MENAP OthNonWest OthWestern TUR WEU --city cph --group_split 5 13 --nmodelpred 2 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME --run_Pycno no --run_Dasy no --run_Disaggregation yes --maxIters 10 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8 --verMassPreserv no --run_Evaluation no  
 
 custom Model : aloss.AdaptiveLossFunction, smoothLC1Adapt
+
+python main.py --attr_value children students mobadults nmobadults elderly DNK EEU EurNonEU MENAP OthNonWest OthWestern TUR WEU --city cph --group_split 5 13 --nmodelpred 1 --popraster GHS_POP_100_near_cubicsplineWaterIESM_new.tif --key KOMNAME --run_Pycno no --run_Dasy no --run_Disaggregation yes --maxIters 10 --methodopts apcnn --ymethodopts Dasy --inputDataset AIL8 --verMassPreserv no --run_Evaluation no

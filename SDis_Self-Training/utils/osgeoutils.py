@@ -108,7 +108,7 @@ def ogr2raster(fshape, attr, template, city):
 
     band = target_ds.GetRasterBand(1)
     band.SetNoDataValue(np.NaN)
-
+    print(attr)
     values = [row.GetField(attr) for row in source_layer]
 
     for i in values:
@@ -126,7 +126,7 @@ def copyShape(fshapea, meth,city):
     fshapea = Path(fshapea)
     fname = fshapea.stem
     #fname = fshapea.split('\\',-1)[-1].split('.shp')[0]
-    print(fshapea,fname)
+    
     fshape = ROOT_DIR + '/Temp/{}/'.format(city) + fname + '_' + meth + '_' + str(os.getpid()) + '.shp'
     gpd.read_file(fshapea).to_file(fshape, driver='ESRI Shapefile')
     return fshape

@@ -18,6 +18,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
                 casestudy='pcounts', tempfileid=None, verbose=False):
     
     print('| DISSEVER MULTIPLE VARIABLES')
+    print('nmodelpred', nmodelpred)
     indicator = casestudy.split('_')[0]
     filenamemetrics2e = ROOT_DIR + '/TempCSV/{}/pcounts1_CLF'.format(city) + casestudy + '_2e0.csv'
 
@@ -102,7 +103,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
         ancdatasets = ancdatasets * ancvarsmask
         caret.test_type(ancdatasets)
         # Compile model and save initial weights
-        cnnobj = ku.compilecnnmodel(cnnmod, attr_value, group_split, [patchsize, patchsize, ancdatasets.shape[2]], lrate, loss_function, useFlippedImages, dropout,
+        cnnobj = ku.compilecnnmodel(cnnmod, attr_value, group_split, [patchsize, patchsize, ancdatasets.shape[2]], lrate, loss_function, 
+                                    useFlippedImages, nmodelpred, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         print("not Saving the weigths") 
         cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
@@ -157,9 +159,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             print(predictedmaps[0].shape)
             #This is a list of arrays of (440,445,1,n)  
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
-        caret.test_type(predictedmaps)
-        caret.test_type(predictedmaps[1])
-        print("--", len(predictedmaps)) 
         bestmaepredictedmaps = float("inf")
         newPredList=[]
         
@@ -274,7 +273,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
                 if error < lowesterror:
                     lowesterror = error
                     lowesterriter = k
-                    print('NOT Retaining model fitted at iteration', lowesterriter)
+                    print('Retaining model fitted at iteration', lowesterriter)
                     lowesterrdisseverdataset = np.copy(disseverdatasetA)
             else:
                 if k == min_iter:

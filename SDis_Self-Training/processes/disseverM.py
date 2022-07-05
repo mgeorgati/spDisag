@@ -1,33 +1,35 @@
 import os
+import sys
 import time
 
+from models import caretML
+import evaluating.metricsev as mev
 import numpy as np
 import rasterio
-from evaluating import mev
-from models import caret, ku
+import utils.gputils as gput
+import utils.neigPairs as neigPairs
 from sklearn import metrics
-from utils import gput, neigPairs, npu, osgu
+from utils import npu
+from utils import osgu
 
 from processes import pycno
 
 
-def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
-                method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, filters=[2,4,8,16,32],
-                lweights=[1/2, 1/2], extdataset=None, p=[1], min_iter=3, max_iter=100, converge=2,
-                hubervalue=0.5, stdivalue=0.01, dropout=0.5,
-                casestudy='pcounts', tempfileid=None, verbose=False):
-    
+def runDissever(city, fshape, ancdatasets, attr_value, group_split, ROOT_DIR, min_iter=3, max_iter=100,
+                poly2agg = None, rastergeo=None, method='lm', p=[1], yraster=None, 
+                converge=2, casestudy='pcounts', tempfileid=None, verbose=False):
+
     print('| DISSEVER MULTIPLE VARIABLES')
     indicator = casestudy.split('_')[0]
-    filenamemetrics2e = ROOT_DIR + '/TempCSV/{}/pcounts1_CLF'.format(city) + casestudy + '_2e0.csv'
-
+    filenamemetrics2e = ROOT_DIR + '/TempCSV/{}/pcounts1_'.format(city) + casestudy + '_2e0.csv'
+    """
     if patchsize >= 16 and (cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg'):
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_wpadd_extended'
     elif patchsize >= 16:
         cstudyad = indicator + '_ghspghsbualcnl_' + str(patchsize) + '_nopadd_extended'
     else:
         cstudyad = None
-
+    """
     print("here is the 1st ancdatasets: ancillary:", ancdatasets.shape)
     nrowsds = ancdatasets[:,:,0].shape[1]
     ncolsds = ancdatasets[:,:,0].shape[0]
@@ -53,8 +55,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             
             #This is a nd array. Each array corresponds to a raster of initial estimates.
             disseverdatasetA = np.dstack((listOfArrays))
-            print("disseverdatasetA_1:")
-            caret.test_type(disseverdatasetA)
+            
             #disseverdatasetList = [disseverdatasetA]
             #This is a list of dictionaries. Each dictionary has the aggregated values that will be used to preserve the mass later
             idpolvalues = idpolvaluesList
@@ -77,8 +78,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     dissmask = np.copy(idsdataset)
     dissmask[~np.isnan(dissmask)] = 1
     ancvarsmask = np.dstack([dissmask] * ancdatasets.shape[2])
-    print("ancvarsmask_1:")
-    caret.test_type(ancvarsmask)
+    print("ancvarsmask:", ancvarsmask.shape )
     dissmaskList=[]
     for i in range(len(attr_value)):
         dissmaskList.append(dissmask)
@@ -87,27 +87,28 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
     dissmaskA = dissmask.reshape(dissmask.shape[0],dissmask.shape[1], 1, dissmask.shape[2])
     
     olddisseverdataset = disseverdatasetA
-     
+    
+    """
     if method.endswith('cnn'):
         print("This is for the CNN") 
-        
+    
         # Create anc variables patches (includes replacing nans by 0, and 0 by nans)
         print('| Creating ancillary variables patches')
         # ancdatasets[np.isnan(ancdatasets)] = 0
-        
+        print(cnnmod)
         padd = True if cnnmod == 'lenet' or cnnmod == 'uenc' or cnnmod == 'vgg' else False
-        
+        print(cstudyad)
         ancpatches = ku.createpatches(ancdatasets,city, ROOT_DIR, patchsize, padding=padd, stride=1, cstudy=cstudyad)
         print("ancpatches = patch of the ancillary:", ancpatches.shape)
         ancdatasets = ancdatasets * ancvarsmask
-        caret.test_type(ancdatasets)
+
         # Compile model and save initial weights
         cnnobj = ku.compilecnnmodel(cnnmod, [patchsize, patchsize, ancdatasets.shape[2]], lrate, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
         print("not Saving the weigths") 
         cnnobj.save_weights(ROOT_DIR + '/Temp/{}/models_'.format(city) + casestudy + '.h5')
-        
-    print("Saving the weigths")
+    """
+    
     lasterror = -np.inf
     lowesterror = np.inf
     start_timeT = time.time()
@@ -116,16 +117,16 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
         start_time = time.time()
         # if (k%10) == 0:
         #     epochspi = epochspi + 10
-           
+        
         if method.endswith('cnn'):
-            print("This is for the CNN") #UNCOMMENT IT FOR CNN
-            
+            print("You need to change environment and include tensorflow! This refers to the NN")
+            sys.exit()
+            """
             print('| -- Updating dissever patches')
             # disseverdataset[np.isnan(disseverdataset)] = 0
             disseverdatasetA = disseverdatasetA * dissmask
             disspatches = ku.createpatches(disseverdatasetA, city, ROOT_DIR, patchsize, padding=padd, stride=1)
             print(disspatches.shape, "this the demo input")
-            caret.test_type(disspatches)
             print('| -- Fitting the model')
             fithistory = caret.fitcnn(ancpatches, disspatches, p, ROOT_DIR, city, cnnmod=cnnmod, cnnobj=cnnobj, casestudy=casestudy,
                                     epochs=epochspi, batchsize=batchsize, extdataset=extdataset)
@@ -134,16 +135,10 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             # mod = caret.fit(ancdatasets, disseverdataset, p, 'aplm', batchsize, lrate, epochspi)
 
             print('| -- Predicting new values')
-            
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
                                             ancpatches, disseverdatasetA.shape, batchsize=batchsize)
-            print("predicted maps1")
-            caret.test_type(predictedmaps)
+            print("predicted maps:", len(predictedmaps))
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
-            caret.test_type(predictedmaps)
-            #predictedmaps = predictedmaps.reshape(predictedmaps.shape[0],predictedmaps.shape[1], 1, predictedmaps.shape[2])
-            #caret.test_type(predictedmaps)
-            #for i in range(len(predictedmaps)): predictedmaps[i] = np.array_split(predictedmaps,predictedmaps.shape[-1])
             #predictedmaps= predictedmaps[0]
             #predictedmaps = predictedmaps.reshape(predictedmaps.shape[0],predictedmaps.shape[1], 1, predictedmaps.shape[2])
             #This is a list of arrays of (440,445,1,n)  
@@ -161,7 +156,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             # predictedmapslm = caret.predict(mod, ancdatasets)
             # for i in range(len(predictedmapslm)): predictedmapslm[i] = np.expand_dims(predictedmapslm[i], axis=2)
             # for i in range(len(predictedmaps)): predictedmaps[i] = 0.9 * predictedmaps[i] + 0.1 * predictedmapslm[i]
-            
+        """
         else:
             print('| -- Fitting the model')
             # Replace NaN's by 0
@@ -170,22 +165,21 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             #### <<<< ----- THIS CHANGED ----- >>>> ####
             disseverdatasetA = disseverdatasetA * dissmask
             
-            mod = caret.fitM(ancdatasets, disseverdatasetA, p, method, batchsize, lrate, epochspi, ROOT_DIR, casestudy,city) 
+            mod = caretML.fitM(ancdatasets, disseverdatasetA, p, method, ROOT_DIR, casestudy, city, group_split) 
             
             print('| -- Predicting new values')
-            predictedmaps = caret.predictM(mod, ancdatasets, attr_value)
+            predictedmaps = caretML.predictM(mod, ancdatasets, attr_value)
             print(len(predictedmaps))
             print(predictedmaps[0].shape)
             #This is a list of arrays of (440,445,1,n)  
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
-        caret.test_type(predictedmaps)
-        caret.test_type(predictedmaps[1])
+        
         print("--", len(predictedmaps)) 
         bestmaepredictedmaps = float("inf")
         newPredList=[]
         
         for i, predmap in enumerate(predictedmaps):
-            caret.test_type(predmap)
+            
             val = attr_value[i]
             print("---", val, "---")
             # Replace NaN zones by Nan
@@ -195,7 +189,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, yraster=None, r
             ancdatasets = ancdatasets * ancvarsmask
             metricsmap = mev.report_sdev_map(predmap)
             
-            print("k",np.nanmax(predmap[i]), predmap[i].shape) #take the i
+            print("k",np.nanmax(predmap), predmap.shape) 
             idpolvalues = idpolvaluesList[i]
             previdpolvalues = idpolvalues # Original polygon values
             

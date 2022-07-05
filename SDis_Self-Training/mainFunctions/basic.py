@@ -15,9 +15,22 @@ def createFolder(path):
     else: 
         print("------------------------------ Folder already exists------------------------------")
 
-
-"""
 import pandas as pd
+def csvTOlatex(input, output):
+    df = pd.read_csv(input, encoding='cp1252')
+    with open(output, 'w', encoding='cp1252') as tf:
+        tf.write(df.to_latex())
+
+def excelTOlatex(input, output):
+    df = pd.read_excel(input)
+    with open(output, 'w') as tf:
+        tf.write(df.to_latex()) 
+
+import openpyxl
+def jsonTOxlxs(input, output):
+    df = gpd.read_file(input)
+    df.to_csv(output)
+"""
 ## ## ## ## ## ----- SAVE DATAFRAME TO EXCEL FILE  ----- ## ## ## ## ##
 def dfTOxls(dest_path, fileName, frame):
     # Create a Pandas Excel writer using XlsxWriter as the engine
@@ -26,7 +39,7 @@ def dfTOxls(dest_path, fileName, frame):
     frame.to_excel(writer, sheet_name='Sheet1')
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
-    
+"""  
 import geopandas as gpd
 import json
 from rasterstats import zonal_stats
@@ -50,4 +63,3 @@ def zonalStat(src_file, dst_file, polyPath, statistics):
     #dst_file = dstPath + "{0}".format(dstFile) #
     with open(dst_file , 'w') as outfile:
         json.dump(result, outfile)
-"""

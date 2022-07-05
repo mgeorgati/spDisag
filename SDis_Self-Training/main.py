@@ -36,7 +36,7 @@ def main():
 
     process_data(attr_value=args.attr_value, city=args.city, group_split=args.group_split, nmodelpred=args.nmodelpred, popraster = args.popraster, key=args.key, 
             run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
-            inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation)
+            inputDataset=args.inputDataset)
 
 if __name__ == '__main__':
     main()
