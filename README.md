@@ -66,7 +66,6 @@ python main.py --attr_value=[demographic_groups] --city=[case_study_area] --grou
 --popraster=[input_pop_layer] --key=[key] --run_Pycno=[run_Pycno] --run_Dasy=[run_Dasy] \
 --run_Disaggregation=[run_Disaggregation] \
 --maxIters=[maxIters] --methodopts=[methodopts] --ymethodopts=[ymethodopts] --inputDataset=[inputDataset] 
-
 ```
 ```
 --attr_value, the examined demographic groups
@@ -123,7 +122,11 @@ python main_eval.py --attr_value=[demographic_groups] --city=[case_study_area] -
 Example:    
 Perform evaluation on Amsterdam data for 2 population groups.     
 ```
-python main_eval.py --attr_value mar nonwestern --city ams --key Buurtcode --methodopts apcnn --verMassPreserv no --run_Evaluation yes \--calc_Metrics no --calc_Corr no --plot_evalMaps yes --calc_Metrics_knn no --plot_evalMaps_knn no --plot_Matrices no
+python main_eval.py --attr_value mar nonwestern --city ams --key Buurtcode --methodopts apcnn \
+--verMassPreserv no --run_Evaluation yes \
+--calc_Metrics no --calc_Corr no --plot_evalMaps yes \
+--calc_Metrics_knn no --plot_evalMaps_knn no \
+--plot_Matrices no
 
 ```
 
