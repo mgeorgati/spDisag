@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-import dasymmapping as dm
+from processes import dm 
 import osgeoutils as osgu
 
 

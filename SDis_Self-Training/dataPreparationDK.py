@@ -1,31 +1,25 @@
 # Main Script for data preparation -------------------------------------------------------------------------------------
 # imports
-import itertools
 import os, sys, subprocess
 import rasterio
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import osgeoutils as osgu
-import gdalutils
-from config.definitions import ROOT_DIR, python_scripts_folder_path, gdal_rasterize_path
-from dataPrepDK.dataPrep import restructureData
-from evaluateFunctions import zonalStat
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.mainFunctions.format_conversions import shptoraster
+from utils import osgu, gdalutils
+from config import ROOT_DIR, python_scripts_folder_path, gdal_rasterize_path, year, ancillary_path
+from dataPreparation.cph.popDataPrep import restructureDataAG, restructureDataMB,combineMB_AG, joinStatShap 
+from mainFunctions import zonalStat, shptoraster
 city ='cph'
 
 #-------- SELECT PROCESS --------
-
-#-------- PROCESS: GHS RPREPARATION --------
 init_ghs = "no"
-raster_file = 'C:/FUME/PopNetV2/data_prep/{0}_ProjectData/temp_tif/{0}_CLC_2012_2018.tif'.format(city)
 init_population = "yes"
 init_templates = "no"
 init_esm = "no"
 process_ghs = "no"
+#-------- PROCESS: GHS RPREPARATION --------
 
-year=2018
+raster_file = 'C:/FUME/PopNetV2/data_prep/{0}_ProjectData/temp_tif/{0}_CLC_2012_2018.tif'.format(city)
  
 def process_data():
     if init_ghs == "yes":
@@ -44,7 +38,10 @@ def process_data():
                 gdalutils.resampleGDAL(temp_outputfile, temp_outputfileVRT, 100, 100, resampleAlg)
                 gdalutils.vrt2tifGDAL(raster_file, temp_outputfileVRT, outputfile)
     if init_population == "yes":
-        restructureData(ROOT_DIR, city, year)
+        #restructureDataAG(ROOT_DIR)
+        #restructureDataMB(ROOT_DIR)
+        combineMB_AG(ROOT_DIR, city, year)
+        #joinStatShap(ROOT_DIR, city, year)
         
     if init_templates == "yes":
         input = ROOT_DIR + '/Shapefiles/{1}/{0}_{1}.shp'.format(year,city)

@@ -1,15 +1,12 @@
-import glob, os
-from datetime import datetime
-from config import (ROOT_DIR, ancillary_path,  python_scripts_folder_path,
-                                pop_path, year)
-from evaluating import evalRsNL, corCSV
+from config import (ROOT_DIR, ancillary_path, gdal_rasterize_path, pop_path,
+                    python_scripts_folder_path, year)
 from mainFunctions import createFolder
-#from runDasymetricMapping import run_dasy
-#from runDisaggregation import run_disaggregation
-#from runPycnophylacticInterpolation import run_pycno
-from verifyMassPreserving import verifyMassPreserv
-
-def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, ymethodopts, inputDataset, verMassPreserv, run_Evaluation):
+from runDasymetricMapping import run_dasy
+from runDisaggregation import run_disaggregation
+from runPycnophylacticInterpolation import run_pycno
+import osgeoutils as osgu
+def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_Dasy, run_Disaggregation, maxIters, methodopts, 
+                 ymethodopts, inputDataset):
     ancillary_path_case = ancillary_path +"{}".format(city)
     
     createFolder(ROOT_DIR + "/Temp/{}/".format(city))
@@ -34,8 +31,15 @@ def process_data(attr_value, city, group_split, popraster, key, run_Pycno, run_D
             run_dasy(ancillary_path, year, city, attr_value, outputNameDasy, ROOT_DIR, popraster, key) 
     
     if run_Disaggregation == "yes":
-        print(methodopts, ymethodopts, inputDataset)
-        for i in inputDataset:
-            run_disaggregation(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, city, year, attr_value, group_split, key, i, maxIters, python_scripts_folder_path)
-    
-    
+        if len(methodopts) == 1:
+            if not methodopts[0].endswith('cnn'):
+                for i in inputDataset:
+                    #fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
+                    #fshape= osgu.copyShape(fshapea, 'dissever', city)
+                    run_disaggregation(ancillary_path_case, ROOT_DIR,pop_path, methodopts, ymethodopts, city, year, attr_value, group_split, key, i, maxIters, gdal_rasterize_path)
+            else:
+                cnnmodelopts = ['unet']
+                print(inputDataset)
+                for i in inputDataset:
+                    from runDisaggregationTF import run_disaggregationTF 
+                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, i, maxIters, gdal_rasterize_path)

@@ -1,5 +1,5 @@
 import osgeoutils as osgu
-import pycno
+from processes import pycno
 
 
 def run_pycno(ROOT_DIR,ancillary_path, year, city, attr_value, popraster, key):

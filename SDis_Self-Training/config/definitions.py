@@ -5,10 +5,22 @@ parent_path = os.path.dirname(ROOT_DIR)
 
 year=2018
 ancillary_path = parent_path + '/AncillaryData/'
+#Local 
 pop_path = "C:/FUME/Dasymetric_Mapping/GroundTruth/"
 #path to folder with gdal executable files
-gdal_rasterize_path = r'~/anaconda3/envs/spdisag_env/bin'
+gdal_rasterize_path = r'C:/Users/NM12LQ/Anaconda3/envs/spdisag_env/Library/bin'
 python_scripts_folder_path = r'C:/Users/NM12LQ/Anaconda3/envs/spdisag_env/Scripts'
 
+"""
+#VM0
+gdal_rasterize_path = r'/home/ubuntu/anaconda3/envs/spdisag_env/bin'
+python_scripts_folder_path = r'~/anaconda3/envs/spdisag_env/spdisag_env/Scripts'
+"""
+"""
+#VM1
+pop_path = "C:/FUME/Dasymetric_Mapping/GroundTruth/"
+gdal_rasterize_path = r'/home/ubuntu/anaconda3/envs/spdisag_env/bin'
+python_scripts_folder_path = r'~/anaconda3/envs/spdisag_env/spdisag_env/Scripts'
+"""
 temp_shp= ancillary_path + "/temp_shp/"
 temp_tif= ancillary_path + "/temp_tif/"

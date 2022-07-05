@@ -10,7 +10,7 @@ import rasterio.mask
 from mainFunctions import createFolder, csvTOlatex
 from plotting import plot_map, plot_mapVectorPolygons, plotMatrix, scatterplot
 from plotting.createScatterPlot import histplot
-from utils import osgu
+import osgeoutils as osgu
 from sklearn.preprocessing import StandardScaler
 from evaluating import (Rsquared, mae_error, mape_error, percentage_error,
                         residual, rmse_error)
@@ -283,23 +283,37 @@ def eval_Scatterplots(evalPath, outputGT, evalFiles, city, attr_value, scatterPa
     for _file in files_in_dir:
         os.remove(_file)  
 
-def createMatrices(evalPath, city, attr_value, evalPathKNN, evalPathKNNgf, evalPathMatrices, exportPathGT, fileName, method, scatterPath):
+def createMatrices(evalPath, city, attr_value, evalPathKNN, evalPathKNNgf, evalPathMatrices, exportPathGT, fileName, method, scatterPath=None):
     # Population distribution
+    e= [os.path.dirname(os.path.dirname(evalPath)) + "/{0}_GT/{0}_{0}/{0}_GT_{1}.png".format(city,attr_value),
+        evalPath + "/apcnn/dissever01_RMSE_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_00RBLF_2018_ams_Dasy_16unet_10epochspi_12AIL12_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_tr2008CLF_2018_ams_Dasy_16unet_10epochspi_2AIL20_it10_{}.png".format(attr_value),
+        evalPath + "/apcnn/dissever01_CLF_2018_ams_Dasy_16unet_10epochspi_2AIL21_it10_{1}.png".format(city,attr_value),
+        evalPath + "/apcatbr/dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{}.png".format(attr_value)]
+    path = evalPathMatrices + "/popdis_LF_HD_{0}.png".format(attr_value)
+    title = "Population Distribution: {0}".format(attr_value)
+    plotMatrix(e, path, title) 
+    
+    """# Population distribution
     e= [exportPathGT + "/{0}_GT_{1}.png".format(city,attr_value),
         evalPath + "/{1}/{0}.png".format(fileName,method),
         evalPath + "/{1}/mae_{0}_Grid.png".format(fileName,method),
         evalPath + "/{1}/div_{0}_Grid.png".format(fileName,method),
-        evalPathKNN + "/convDif_50_{0}.png".format(fileName),
-        evalPathKNN + "/convDif_100_{0}.png".format(fileName),
-        evalPathKNN + "/convDif_200_{0}.png".format(fileName),
-        evalPathKNN + "/convDif_500_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_50_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_100_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_200_{0}.png".format(fileName),
+        #evalPathKNN + "/convDif_500_{0}.png".format(fileName),
         evalPathKNNgf + "/convDif_50_{0}.png".format(fileName),
         evalPathKNNgf + "/convDif_100_{0}.png".format(fileName),
         evalPathKNNgf + "/convDif_200_{0}.png".format(fileName),
         evalPathKNNgf + "/convDif_500_{0}.png".format(fileName)]
     title = "Collection: {0}".format(attr_value)
-    #plotMatrix(e, evalPathMatrices, title) 
-    
+    plotMatrix(e, evalPathMatrices, title) """
+    """
     # Population distribution
     e= [scatterPath + "/scat_dissever01_RMSEflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{}.png".format(attr_value),
         scatterPath + "/scat_dissever01_CLFflipped_2018_ams_Dasy_16unet_10epochspi_AIL12_it10_{0}.png".format(attr_value),
@@ -315,6 +329,7 @@ def createMatrices(evalPath, city, attr_value, evalPathKNN, evalPathKNNgf, evalP
         scatterPath + "/scatResidualsP_dissever01WIESMN_500_2018_ams_DasyA_apcatbr_p[1]_12AIL12_12IL_it10_{0}.png".format(attr_value)]
     title = "Collection: {0}".format(attr_value)
     plotMatrix(e, evalPathMatrices, title) 
+    """
     """
     # Population distribution
     e= [os.path.dirname(os.path.dirname(evalPath)) + "/{0}_GT/{0}_GT_{1}.png".format(city,attr_value),

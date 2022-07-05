@@ -6,7 +6,7 @@ import rasterio, pandas as pd, seaborn as sns, numpy as np
 from pathlib import Path
 
 def plotMatrix(fileList, exportPath, title):
-    rows = 3
+    rows = 2
     if len(fileList) % rows==0:
         cols = int(len(fileList)/rows)
         print(cols)

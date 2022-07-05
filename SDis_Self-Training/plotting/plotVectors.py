@@ -294,13 +294,16 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
         "#2b83ba": "{0}-{1}".format(int(a[6]),valMax), "#2b83ba00": "mean total:{}".format(mean)}
     elif evalType == "popdistribution":
         bins = 7
-        if valMax < 200:
+        """if valMax < 200:
             a=[valMin,1, 25, 50, 75, 100, 150, 200]
         elif 200<= valMax <= 700:
             a=[0, 1, 25, 50, 75, 100, 150, valMax]
         else:
-            a=[valMin,1, 50, 100, 200, 300, 400, valMax]
-            #a=[valMin,1, 25, 50, 75, 100, 150, valMax]
+            a=[valMin,1, 50, 100, 200, 300, 400, valMax]"""
+        if valMax > 150:
+            maxim = valMax
+        else: maxim = 200
+        a=[valMin,1, 25, 50, 75, 100, 150, maxim]
         cmap = ListedColormap(["#f1eef600","#e0c8e2","#da9acb", "#df65b0", "#de348a", "#c61266","#980043"])
         norm = colors.BoundaryNorm(a, bins)  
         # Add a legend for labels
@@ -312,11 +315,14 @@ def defineBinsRaster(evalType, valMin, valMax, mean): #
     elif evalType == "popdistributionPred":
         print('pre')
         bins = 7
-        if valMax < 250:
+        """if valMax < 250:
             a=[valMin,1, 25, 50, 75, 100, 150, 250]
         else:
-            a=[valMin, 1, 50, 100, 200, 300, 400, 500]
-            #a=[valMin,1, 25, 50, 75, 100, 150, valMax]
+            a=[valMin, 1, 50, 100, 200, 300, 400, 500]"""
+        if valMax > 150:
+            maxim = valMax
+        else: maxim = 200
+        a=[valMin,1, 25, 50, 75, 100, 150, maxim]
         cmap = ListedColormap(["#f1eef600","#ffffb2","#ffd76d", "#fea649", "#f86c30", "#e62f21","#bd0026"])
         norm = colors.BoundaryNorm(a, bins)  
         # Add a legend for labels

@@ -2,7 +2,7 @@ import warnings
 warnings.simplefilter(action = "ignore", category = RuntimeWarning)
 import os
 from osgeo import gdal
-from utils import osgeoutils
+import osgeoutils as osgu
 
 def progress_cb(complete, message, cb_data):
     '''Emit progress report in numbers for 10% intervals and dots for 3%'''

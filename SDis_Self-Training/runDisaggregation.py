@@ -1,23 +1,24 @@
-import os, sys
-import warnings
+import os
 import subprocess
+import sys
+import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-import itertools 
-from mainFunctions.basic import createFolder
-from ancilDt import selectAncDt
-import dissever
-import disseverM 
-import osgeoutils as osgu
+import itertools
 
+from dataSelection import selectAncDt
+from mainFunctions import createFolder
+#from processes import dissever, disseverM
+import osgeoutils as osgu
 SEED = 42
 os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, city, year, attr_value, group_split, key, inputDataset, iterMax, python_scripts_folder_path):
+def run_disaggregation(ancillary_path, ROOT_DIR, pop_path, methodopts, ymethodopts, city, year, attr_value, group_split, key, inputDataset, iterMax, python_scripts_folder_path):
     """[summary]
 
     Args:
@@ -31,10 +32,10 @@ def run_disaggregation (ancillary_path, ROOT_DIR, methodopts, ymethodopts, city,
     psamplesopts = [[1]]
     fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
     fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city)
-    ancdatasets, rastergeo = selectAncDt(city, year, inputDataset, ancillary_path)
+    ancdatasets, rastergeo = selectAncDt(city, year, inputDataset, ancillary_path, pop_path)
     
     ancdatasetsopts = [ancdatasets]
-
+    
     fshape = osgu.copyShape(fshapea, 'dissever', city)
     
     if not ymethodopts: osgu.addAttr2Shapefile(fshape, fcsv, '{0}_{1}'.format(year,city))

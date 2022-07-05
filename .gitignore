@@ -10,10 +10,10 @@ SDis_Self-Training/filesNotUsed/
 SDis_Self-Training/Temp/
 SDis_Self-Training/TempCSV/
 SDis_Self-Training/TempRaster/
-SDis_Self-Training/dataPrepDK/rawMunicipality_DST
-SDis_Self-Training/dataPrepNL/CBS
-SDis_Self-Training/dataPrepNL/OIS
-SDis_Self-Training/dataPrepNL/CBS_OIS
+SDis_Self-Training/dataPreparartion/cph/rawMunicipality_DST
+SDis_Self-Training/dataPreparartion/dataPrepNL/CBS
+SDis_Self-Training/dataPreparartion/dataPrepNL/OIS
+SDis_Self-Training/dataPreparartion/dataPrepNL/CBS_OIS
 catboost_info/
 AgilePaperTemps/
 

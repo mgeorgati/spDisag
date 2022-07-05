@@ -74,12 +74,19 @@ def calcConv(inputPath, nnn, outPath, city, ancillary_path):
 
 """
 def calcConv(inputPath, nnn, outPath):
-    templ = rasterio.open("C:/Users/NM12LQ/OneDrive - Aalborg Universitet/Dasymetric_Mapping/AncillaryData/ams/template/ams_templateClipped.tif")
+    templ = rasterio.open(ancillary_path + "/{0}/template/{0}_templateClipped.tif".format(city))
     temp = templ.read(1)
+    
+    waterPath = rasterio.open(ancillary_path + '/{0}/corine/waterComb_{0}_CLC_2012_2018.tif'.format(city))
+    water = waterPath.read(1)
+    water = np.where(water>0.3, water, 0)
+    mask = temp * water
+    mask = np.where(mask==1, np.nan, mask)
     
     src = rasterio.open(inputPath)
     arr = src.read(1)
-    print(arr.shape)
+    arr[np.isnan(mask)] = np.nan
+    
     kernel0 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     kernel1 = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
     kernel2 = np.array([[0, 0, 1, 0, 0], [0, 1, 1, 1, 0], [1, 1, 1, 1, 1], [0, 1, 1, 1, 0], [0, 0, 1, 0, 0]])

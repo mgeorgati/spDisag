@@ -1,6 +1,7 @@
 from process import process_data
 import argparse
 import json
+
 def main():
     parser = argparse.ArgumentParser(description='Parameters for multi-output disaggregation with RF and GB')
     parser.add_argument('--attr_value', nargs='+', required=True, help='Input population groups')
@@ -11,13 +12,11 @@ def main():
     parser.add_argument('--run_Pycno', type=str, default='no', help='Run pycnophylactic interpolation')
     parser.add_argument('--run_Dasy', type=str, default='no', help='Run dasymetric mapping')
     parser.add_argument('--run_Disaggregation', type=str, default='no', help='Run disaggregation')
-    parser.add_argument('--maxIters', type=int, default=2, help='Max Iterations')
+    parser.add_argument('--maxIters', type=int, default=10, help='Max Iterations')
     parser.add_argument('--methodopts', nargs='+', help='Select method of disaggregation (aplm (linear model), aprf (random forest), apcatbr (Catboost Regressor))')
     #choices = ['aplm', 'aprf', 'apcatbr']
     parser.add_argument('--ymethodopts',  nargs='+', help='Input layers')
     parser.add_argument('--inputDataset', nargs='+', help='Training dataset')
-    parser.add_argument('--verMassPreserv', type=str, default='no', help='Verify mass preservation')
-    parser.add_argument('--run_Evaluation', type=str, default='no', help='Evaluation of results')
 
     args, unknown = parser.parse_known_args()
     #args = parser.parse_args()
@@ -31,7 +30,7 @@ def main():
 
     process_data(attr_value=args.attr_value, city=args.city, group_split=args.group_split, popraster = args.popraster, key=args.key, 
             run_Pycno=args.run_Pycno, run_Dasy=args.run_Dasy, run_Disaggregation = args.run_Disaggregation, maxIters = args.maxIters, methodopts=args.methodopts, ymethodopts=args.ymethodopts, 
-            inputDataset=args.inputDataset, verMassPreserv=args.verMassPreserv, run_Evaluation=args.run_Evaluation)
+            inputDataset=args.inputDataset)
 
 if __name__ == '__main__':
     main()
