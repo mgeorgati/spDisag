@@ -45,7 +45,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, pop_path, methodopts, ymethod
     if nmodelpred == 2 : useFlippedImages= 'yes' 
     else: useFlippedImages= ''
 
-    loss_function = 'rmse' # 'clf', 'rmse', 'rblf
+    loss_function = 'clf' # 'clf', 'rmse', 'rblf
     
     extendeddatasetopts = [None] # None, '2T6'
     lossweightsopts = [[0.1, 0.9]]

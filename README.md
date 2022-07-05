@@ -54,6 +54,7 @@ Additional parameters need to be defined for training the regression model, such
 For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.  
 
 ### Execute Python Code 
+## Run disaggregation
 To perform the disaggregation method on your own dataset, please run the following code in python after you have collected the above mentioned datasets.
 
 Usage: 
@@ -64,10 +65,9 @@ cd spDisag/SDis_Self-Training
 python main.py --attr_value=[demographic_groups] --city=[case_study_area] --group_split=[group_split] \
 --popraster=[input_pop_layer] --key=[key] --run_Pycno=[run_Pycno] --run_Dasy=[run_Dasy] \
 --run_Disaggregation=[run_Disaggregation] \
---maxIters=[maxIters] --methodopts=[methodopts] --ymethodopts=[ymethodopts] --inputDataset=[inputDataset] \
---verMassPreserv=[verMassPreserv] --run_Evaluation=[run_Evaluation]
-```
+--maxIters=[maxIters] --methodopts=[methodopts] --ymethodopts=[ymethodopts] --inputDataset=[inputDataset] 
 
+```
 ```
 --attr_value, the examined demographic groups
 --city, case study area
@@ -81,8 +81,6 @@ python main.py --attr_value=[demographic_groups] --city=[case_study_area] --grou
 --methodopts, disaggregation method
 --ymethodopts, input layers for disaggregation 
 --inputDataset, training dataset
---verMassPreserv, Run mass preservation
---run_Evaluation, Run Evaluation to ground truth
 ```
 
 Example:    
@@ -90,8 +88,43 @@ Perform dasymetric mapping on Amsterdam data with 2 different population groups 
 ```
 python main.py --attr_value children students mobadults nmobadults elderly sur ant mar tur nonwestern western autoch --city ams \
 --group_split 5 12 --popraster GHS_POP_100_near_cubicspline.tif --key Buurtcode --run_Pycno no --run_Dasy no \
---run_Disaggregation yes --maxIters 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 \
---verMassPreserv no --run_Evaluation no
+--run_Disaggregation yes --maxIters 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 
+
+```
+## Run evaluation
+In order to evaluate the disaggregated layers, you also need the ground truth data at the target resolution. There are various techniques you may follow either with evaluation metrices or visual inspection of the maps. 
+
+Usage: 
+
+```
+cd spDisag/SDis_Self-Training
+python main_eval.py --attr_value=[demographic_groups] --city=[case_study_area] --key=[key] \
+--methodopts=[methodopts] --verMassPreserv=[verMassPreserv] --run_Evaluation=[run_Evaluation] 
+--calc_Metrics=[calc_Metrics] --calc_Corr=[calc_Corr] --plot_evalMaps=[plot_evalMaps] \ 
+--calc_Metrics_knn=[calc_Metrics_knn] --plot_evalMaps_knn=[plot_evalMaps_knn] \
+--plot_Matrices=[plot_Matrices] 
+
+```
+```
+--attr_value, the examined demographic groups
+--city, case study area
+--key, common key for csv and shp
+--methodopts, disaggregation method
+--verMassPreserv, Run mass preservation (yes/no)
+--run_Evaluation, Run Evaluation to ground truth (yes/no)
+--calc_Metrics, Calculate MAE, MRSE, MAPE. Produces excel/tex tables (yes/no). --run_Evaluation needs to be 'yes'
+--calc_Corr, Calculate correlation between ground truth and predictions. Produces excel/tex tables (yes/no). --run_Evaluation needs to be 'yes'
+--plot_evalMaps, Plot maps. You need to define the files manually in process_eval. Produces png images (yes/no). --run_Evaluation needs to be 'yes'
+--calc_Metrics_knn, Calculate MAE, MRSE, MAPE between ground truth and predictions on individualised neighbohoods. Produces excel/tex tables (yes/no). --run_Evaluation needs to be 'yes'
+--plot_evalMaps_knn, Plot individualised neighborhoods and difference between ground truth and predictions. Produces png images (yes/no). --run_Evaluation needs to be 'yes'
+--plot_Matrices, Plot matrices of combination of images. You need to define the files manually in process_eval. Produces png images (yes/no). --run_Evaluation needs to be 'yes'
+```
+
+Example:    
+Perform evaluation on Amsterdam data for 2 population groups.     
+```
+python main_eval.py --attr_value mar nonwestern --city ams --key Buurtcode --methodopts apcnn --verMassPreserv no --run_Evaluation yes \--calc_Metrics no --calc_Corr no --plot_evalMaps yes --calc_Metrics_knn no --plot_evalMaps_knn no --plot_Matrices no
+
 ```
 
 <!-- Contact -->
@@ -101,7 +134,8 @@ Marina Georgati - marinag@plan.aau.dk
 <!-- Citation -->
 ## Citation
 If you use this algorithm in your research or applications, please cite this source:
-M. Georgati, João Monteiro, Bruno Martins and Carsten Keßler [Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosted Regression Trees] 
+
+Georgati, M., Monteiro, J., Martins, B., and Keßler, C.: Spatial Disaggregation of Population Subgroups Leveraging Self-Trained Multi-Output Gradient Boosting Regression Trees, AGILE GIScience Ser., 3, 5, https://doi.org/10.5194/agile-giss-3-5-2022, 2022.
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
