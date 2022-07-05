@@ -54,7 +54,7 @@ Additional parameters need to be defined for training the regression model, such
 For each of the above outputs, it is suggested to verify the mass preservation, while if the ground truth data at the target resolution is available the direct evaluation of the results may be lastly executed. It is recommended to execute each step seprately.  
 
 ### Execute Python Code 
-## Run disaggregation
+#### Run disaggregation
 To perform the disaggregation method on your own dataset, please run the following code in python after you have collected the above mentioned datasets.
 
 Usage: 
@@ -91,7 +91,7 @@ python main.py --attr_value children students mobadults nmobadults elderly sur a
 --run_Disaggregation yes --maxIters 2 --methodopts apcatbr --ymethodopts Dasy --inputDataset AIL1 
 
 ```
-## Run evaluation
+#### Run evaluation
 In order to evaluate the disaggregated layers, you also need the ground truth data at the target resolution. There are various techniques you may follow either with evaluation metrices or visual inspection of the maps. 
 
 Usage: 
