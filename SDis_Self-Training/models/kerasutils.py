@@ -3,7 +3,7 @@ import random
 
 import numpy as np
 import tensorflow as tf
-from mainFunctions import test_type
+from mainFunctions.basicTF import test_type
 from sklearn.feature_extraction.image import extract_patches_2d
 from tensorflow.keras import activations
 from tensorflow.keras import backend as K

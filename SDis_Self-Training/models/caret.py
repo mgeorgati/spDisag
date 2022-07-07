@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from mainFunctions import test_type
+from mainFunctions.basicTF import test_type
 from tensorflow.keras import utils
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from utils import npu

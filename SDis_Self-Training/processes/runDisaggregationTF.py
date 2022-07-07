@@ -14,7 +14,7 @@ import tensorflow as tf
 from dataSelection.ancilDt import selectAncDt
 from mainFunctions.basic import createFolder
 
-from processes.disseverTF import disseverTF
+
 from utils import osgu
 
 SEED = 42
@@ -22,7 +22,7 @@ os.environ['PYTHONHASHSEED'] = '0'
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # Turn off GPU
 
-def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, inputDataset, 
+def run_disaggregationTF(ancillary_path, ROOT_DIR,pop_path, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, inputDataset, 
         iterMax, gdal_rasterize_path):
     """[summary]
 
@@ -52,7 +52,7 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
     
     fshapea = ROOT_DIR + "/Shapefiles/{1}/{0}_{1}.shp".format(year,city)
     fcsv = ROOT_DIR + "/Statistics/{1}/{0}_{1}.csv".format(year,city)
-    ancdatasets, rastergeo = selectAncDt(city, year, inputDataset, ancillary_path)        
+    ancdatasets, rastergeo = selectAncDt(city, year, inputDataset, ancillary_path,pop_path)        
         
     ancdatasetsopts = [ancdatasets]
 
@@ -162,7 +162,8 @@ def run_disaggregationTF(ancillary_path, ROOT_DIR, methodopts, ymethodopts, cnnm
                     casestudy = loss_function.upper() + flipped + '_' + str(year) + '_' + city + '_' + ymethod + '_' + str(patchsize) + cnnmodel + \
                                 '_' + str(epochpi) + 'epochspi' + '_' + str(ancdts.shape[2]) + str(inputDataset) + '_it' + str(iterMax)
                     
-                    dissdatasetList = disseverTF.runDissever(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred, 
+                    from processes.disseverTF import runDisseverTF
+                    dissdatasetList = runDisseverTF(city, fshape, ancdts, attr_value, ROOT_DIR, group_split, nmodelpred, 
                                                                 min_iter=3, max_iter=iterMax,
                                                                 perc2evaluate=perc2evaluate,
                                                                 poly2agg=key,

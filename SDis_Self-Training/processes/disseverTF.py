@@ -3,15 +3,15 @@ import time
 
 import numpy as np
 import rasterio
-#from evaluating import mev
-from models import caret, ku
+import evaluating.metricsev as mev
+import models.kerasutils as ku
+import models.caret as caret
 from sklearn import metrics
 from utils import gput, neigPairs, npu, osgu
-from mainFunctions import test_type
-from processes import pycno
+from processes.heuristic import pycno
 
 
-def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=None, nmodelpred=None, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
+def runDisseverTF(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=None, nmodelpred=None, yraster=None, rastergeo=None, perc2evaluate = 0.1, poly2agg = None,
                 method='lm', cnnmod='unet', patchsize=7, epochspi=1, batchsize=1024, lrate=0.001, loss_function=None, useFlippedImages=None, filters=[2,4,8,16,32],
                 lweights=[1/2, 1/2], extdataset=None, p=[1], min_iter=3, max_iter=100, converge=2,
                 hubervalue=0.5, stdivalue=0.01, dropout=0.5,
@@ -54,7 +54,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             #This is a nd array. Each array corresponds to a raster of initial estimates.
             disseverdatasetA = np.dstack((listOfArrays))
             print("disseverdatasetA_1:")
-            caret.test_type(disseverdatasetA)
             #disseverdatasetList = [disseverdatasetA]
             #This is a list of dictionaries. Each dictionary has the aggregated values that will be used to preserve the mass later
             idpolvalues = idpolvaluesList
@@ -78,7 +77,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
     dissmask[~np.isnan(dissmask)] = 1
     ancvarsmask = np.dstack([dissmask] * ancdatasets.shape[2])
     print("ancvarsmask_1:")
-    caret.test_type(ancvarsmask)
     dissmaskList=[]
     for i in range(len(attr_value)):
         dissmaskList.append(dissmask)
@@ -100,7 +98,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
         ancpatches = ku.createpatches(ancdatasets,city, ROOT_DIR, patchsize, padding=padd, stride=1, cstudy=cstudyad)
         print("ancpatches = patch of the ancillary:", ancpatches.shape)
         ancdatasets = ancdatasets * ancvarsmask
-        caret.test_type(ancdatasets)
         # Compile model and save initial weights
         cnnobj = ku.compilecnnmodel(cnnmod, attr_value, group_split, [patchsize, patchsize, ancdatasets.shape[2]], lrate, loss_function, useFlippedImages, dropout,
                                     filters=filters, lweights=lweights, hubervalue=hubervalue, stdivalue=stdivalue)
@@ -124,7 +121,6 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             disseverdatasetA = disseverdatasetA * dissmask
             disspatches = ku.createpatches(disseverdatasetA, city, ROOT_DIR, patchsize, padding=padd, stride=1)
             print(disspatches.shape, "this the demo input")
-            caret.test_type(disspatches)
             print('| -- Fitting the model')
             fithistory = caret.fitcnn(ancpatches, disspatches, p, ROOT_DIR, city, cnnmod=cnnmod, cnnobj=cnnobj, casestudy=casestudy,
                                     epochs=epochspi, batchsize=batchsize, extdataset=extdataset)
@@ -137,9 +133,7 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             predictedmaps = caret.predictcnn(cnnobj, cnnmod, fithistory, casestudy,
                                             ancpatches, disseverdatasetA.shape, group_split, attr_value, nmodelpred, batchsize=batchsize)
             print("predicted maps1")
-            caret.test_type(predictedmaps)
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
-            caret.test_type(predictedmaps)
             
         else:
             print('| -- Fitting the model')
@@ -157,8 +151,8 @@ def runDissever(city, fshape, ancdatasets, attr_value, ROOT_DIR, group_split=Non
             print(predictedmaps[0].shape)
             #This is a list of arrays of (440,445,1,n)  
             for i in range(len(predictedmaps)): predictedmaps[i] = np.expand_dims(predictedmaps[i], axis=2)
-        caret.test_type(predictedmaps)
-        caret.test_type(predictedmaps[1])
+        
+        
         print("--", len(predictedmaps)) 
         bestmaepredictedmaps = float("inf")
         newPredList=[]

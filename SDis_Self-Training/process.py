@@ -43,7 +43,7 @@ def process_data(attr_value, city, group_split, nmodelpred, popraster, key, run_
                 print(inputDataset)
                 for i in inputDataset:
                     from processes.runDisaggregationTF import run_disaggregationTF
-                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, i, maxIters, gdal_rasterize_path)
+                    run_disaggregationTF(ancillary_path_case, ROOT_DIR, pop_path, methodopts, ymethodopts, cnnmodelopts, city, year, attr_value, group_split, nmodelpred, key, i, maxIters, gdal_rasterize_path)
         else:
             print("---------- YOU NEED TO DEFINE METHODOPTS ----------")
     
